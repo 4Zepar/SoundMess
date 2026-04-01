@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>SoundWave - Твоя Музыка</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #121212; color: white; margin: 0; padding-bottom: 90px; }
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        a:hover { color: #1DB954; } 
+        
+        /* Шапка сайта */
+        header { background: #000; padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #282828; }
+        .logo { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        
+        /* Главный контент */
+        main { padding: 30px; max-width: 1200px; margin: 0 auto; }
+        h1 { font-size: 32px; margin-bottom: 20px; }
+        
+        /* Стили списка */
+        .track-list { display: flex; flex-direction: column; gap: 10px; }
+        .track-item { background: #181818; padding: 15px; border-radius: 8px; display: flex; align-items: center; transition: background 0.2s; }
+        .track-item:hover { background: #2a2a2a; }
+        .cover { width: 50px; height: 50px; border-radius: 4px; background: #282828; margin-right: 15px; background-size: cover; background-position: center; }
+        
+        .track-info { flex-grow: 1; }
+        .title { font-weight: bold; font-size: 16px; }
+        .artist { color: #b3b3b3; font-size: 14px; }
+        
+        /* Кнопки */
+        .controls { display: flex; gap: 15px; align-items: center; }
+        .btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; transition: 0.2s; padding: 0; }
+        .btn:hover { color: #1DB954; transform: scale(1.1); }
+        .btn-play { background: #1DB954; color: black; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .btn-play:hover { background: #1ed760; color: black; }
+
+        /* Панель плеера */
+        .player-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #181818; padding: 15px 30px; display: flex; align-items: center; border-top: 1px solid #282828; z-index: 1000; }
+        
+        /* Кастомный ползунок */
+        input[type=range] { cursor: pointer; accent-color: #1DB954; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">SOUNDWAVE</div>
+    <div class="nav-links">
+        <a href="/">Explore</a>
+        <a href="/admin/">Admin Panel</a>
+    </div>
+</header>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<div class="player-bar">
+    <audio id="main-player"></audio>
+    
+    <button class="btn btn-play" id="play-pause-btn" onclick="togglePlay()">▶</button>
+    
+    <div style="margin-left: 20px; min-width: 200px;">
+        <span id="current-track-title" style="font-weight: bold;">Выберите трек</span>
+    </div>
+    
+    <input type="range" id="progress-bar" value="0" style="flex-grow: 1; margin: 0 30px;">
+    
+    <button class="btn" id="mute-btn" onclick="toggleMute()">🔊</button>
+</div>
+
+<script>
+    // Базовая функция для мута (чтобы не писать сложный код в onclick)
+    function toggleMute() {
+        const p = document.getElementById('main-player');
+        const b = document.getElementById('mute-btn');
+        p.muted = !p.muted;
+        b.innerText = p.muted ? '🔇' : '🔊';
+    }
+</script>
+
+</body>
+</html>
