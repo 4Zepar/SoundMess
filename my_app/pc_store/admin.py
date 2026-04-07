@@ -8,5 +8,4 @@ class ArtistAdmin(admin.ModelAdmin):
 @admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
     list_display = ['title', 'artist']
-    # Позволяет искать треки по названию или имени артиста
     search_fields = ['title', 'artist__user__username']

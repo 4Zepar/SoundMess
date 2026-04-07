@@ -37,7 +37,6 @@
     </div>
 
 <script>
-    // Оборачиваем всё в событие "загрузки контента"
     document.addEventListener('DOMContentLoaded', function() {
         const audio = document.getElementById('main-player');
         const playBtn = document.getElementById('play-pause-btn');
@@ -46,10 +45,6 @@
 
         // Выносим функции в глобальную видимость, чтобы кнопки их видели
         window.playTrack = function(url, title) {
-            if (!audio) {
-                console.error("Плеер не найден! Проверь id='main-player' в base.html");
-                return;
-            }
 
             if (audio.src.includes(url)) {
                 window.togglePlay();
