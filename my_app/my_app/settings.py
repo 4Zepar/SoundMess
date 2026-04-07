@@ -119,3 +119,8 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Куда переходить после успешного входа
+LOGIN_REDIRECT_URL = 'home'
+
+# Куда переходить после выхода (на всякий случай)
+LOGOUT_REDIRECT_URL = 'home'
