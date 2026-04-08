@@ -3,17 +3,35 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
+class ListeningHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='history')
+    track = models.ForeignKey('Track', on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp'] # Свежие прослушивания будут сверху
+
+    def __str__(self):
+        return f"{self.user.username} послушал {self.track.title}"
+    
+
 # 1. Профиль — расширяет стандартного Юзера
 class Profile(models.Model):
     ROLE_CHOICES = [
         ('listener', 'Слушатель'),
         ('artist', 'Артист'),
     ]
-    # ТУТ БЫЛА ОШИБКА: заменяем on_submit на on_delete
+
     user = models.OneToOneField(User, on_delete=models.CASCADE) 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='listener')
     bio = models.TextField(blank=True, verbose_name="О себе")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+
+    @property
+    def favorite_album(self):
+        from .models import Album # Импортируем тут, чтобы не было конфликтов
+        return Album.objects.filter(owner=self.user, is_favorite_folder=True).first()
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"

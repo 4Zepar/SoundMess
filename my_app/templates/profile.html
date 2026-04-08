@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    /* Перевели в вертикальный формат */
+    .profile-container { 
+        display: flex; flex-direction: column; gap: 20px; padding: 20px; 
+        max-width: 800px; margin: 0 auto; 
+    }
+    
+    .profile-card { 
+        background: var(--card-bg); padding: 25px; border-radius: 12px; 
+        text-align: center;
+    }
+    
+    .avatar-img { 
+        width: 180px; height: 180px; border-radius: 50%; object-fit: cover; 
+        margin-bottom: 15px; border: 3px solid var(--accent-color); background: #222;
+    }
+    
+    .badge { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-artist { background: var(--accent-color); color: white; }
+    .badge-listener { background: #333; color: #fff; }
+    .badge-admin { background: #e74c3c; color: white; margin-left: 5px; }
+
+    .content-section { background: var(--card-bg); border-radius: 12px; padding: 25px;  }
+    
+    .album-card { width: 160px; transition: 0.3s; text-decoration: none; color: inherit; }
+    .album-card:hover { transform: translateY(-5px); }
+    .album-cover { 
+        width: 160px; height: 160px; background: #222; border-radius: 8px; 
+        display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 10px;
+    }
+    
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-item { 
+        display: flex; justify-content: space-between; padding: 12px 0; 
+        border-bottom: 1px solid var(--border-color); font-size: 14px;
+    }
+    .history-item:last-child { border-bottom: none; }
+    
+    .action-links { margin-top: 20px; display: flex; justify-content: center; gap: 20px; }
+    .action-links a { font-size: 13px; font-weight: 600; text-decoration: none; }
+</style>
+
+<div class="profile-container">
+    
+    <div class="profile-card">
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" class="avatar-img" alt="Avatar">
+        {% else %}
+            <svg class="avatar-img" style="padding: 25px; fill: #666;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        {% endif %}
+        
+        <h2 style="margin: 0 0 10px;">{{ user.username }}</h2>
+        
+        <div>
+            <span class="badge {% if profile.role == 'artist' %}badge-artist{% else %}badge-listener{% endif %}">
+                {{ profile.get_role_display }}
+            </span>
+            {% if user.is_staff or user.is_superuser %}
+                <span class="badge badge-admin">Админ</span>
+            {% endif %}
+        </div>
+
+        <p style="color: var(--text-dim); font-size: 13px; margin-top: 15px;">{{ profile.bio|default:"Биография не заполнена." }}</p>
+        
+        <div class="action-links">
+            <a href="#" style="color: var(--accent-color);">Редактировать</a>
+            {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'admin:index' %}" style="color: #e74c3c;">Админ-панель</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.profile.role == 'artist' %}
+    <div class="profile-card" style="border-color: var(--accent-color); display: flex; justify-content: space-between; align-items: center; padding: 15px 25px;">
+        <h4 style="margin: 0;">Панель артиста</h4>
+        <a href="{% url 'upload_track' %}" style="background: var(--accent-color); color: white; padding: 8px 15px; border-radius: 6px; font-weight: 600; text-decoration: none;">Загрузить трек</a>
+    </div>
+    {% endif %}
+
+    <section class="content-section">
+        <h3 style="margin-top: 0;">Мои Альбомы</h3>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            {% for album in my_albums %}
+                <a href="{% url 'album_detail' album.id %}" class="album-card">
+                    <div class="album-cover">
+                        {% if album.is_favorite_folder %}
+                            <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        {% else %}
+                            <span>💿</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ album.title }}</div>
+                    <small style="color: var(--text-dim);">{{ album.tracks.count }} треков</small>
+                </a>
+            {% empty %}
+                <p style="color: var(--text-dim);">Альбомов пока нет.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h3 style="margin-top: 0;">Недавно прослушано</h3>
+        <div class="history-list">
+            {% for entry in history %}
+                <div class="history-item">
+                    <span>{{ entry.track.artist.user.username }} — <strong>{{ entry.track.title }}</strong></span>
+                    <span style="color: var(--text-dim);">{{ entry.timestamp|date:"d M, H:i" }}</span>
+                </div>
+            {% empty %}
+                <p style="color: var(--text-dim);">История пуста.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

@@ -1,85 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>YOUR DAILY MIX / NEW RELEASES</h1>
+    <h1 style="margin-bottom: 30px;">YOUR DAILY MIX / NEW RELEASES</h1>
     
-    <div class="track-list">
+    <div class="track-list" style="display: flex; flex-direction: column; gap: 4px;">
         {% for track in tracks %}
-            <div class="track-item">
-                {% if track.cover %}
-                    <div class="cover" style="background-image: url('{{ track.cover.url }}');"></div>
-                {% else %}
-                    <div class="cover" style="background-color: #282828;"></div> 
-                {% endif %}
-                
-                <div class="track-info">
-                    <div class="title">{{ track.title }}</div>
-                    <div class="artist">
-                        <a href="#">{{ track.artist.user.username }}</a>
-                    </div>
-                </div>
-                
-                <div class="controls">
-                    <button class="btn btn-like">🤍</button>
-                    
-                    {% if track.audio_file %}
-                        <button class="btn btn-play" onclick="playTrack('{{ track.audio_file.url }}', '{{ track.title|escapejs }}')">▶</button>
-                    {% else %}
-                        <button class="btn" title="Файл отсутствует" style="opacity: 0.3;">🔇</button>
-                    {% endif %}
-                    
-                    <button class="btn">⋮</button>
-                </div>
-            </div>
+            {% include "includes/track_item.html" with track=track %}
         {% empty %}
-            <p>Треков пока нет. Загрузи первый в админке!</p>
+            <div style="text-align: center; padding: 50px; color: #b3b3b3;">
+                <p>Треков пока нет. Загрузи первый в админке или через профиль!</p>
+            </div>
         {% endfor %}
     </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const audio = document.getElementById('main-player');
-        const playBtn = document.getElementById('play-pause-btn');
-        const trackTitle = document.getElementById('current-track-title');
-        const progressBar = document.getElementById('progress-bar');
-
-        // Выносим функции в глобальную видимость, чтобы кнопки их видели
-        window.playTrack = function(url, title) {
-
-            if (audio.src.includes(url)) {
-                window.togglePlay();
-            } else {
-                audio.src = url;
-                trackTitle.innerText = title;
-                audio.play().then(() => {
-                    playBtn.innerText = '⏸';
-                }).catch(e => console.log("Нужен клик по странице для запуска"));
-            }
-        }
-
-        window.togglePlay = function() {
-            if (!audio.src) return;
-            if (audio.paused) {
-                audio.play();
-                playBtn.innerText = '⏸';
-            } else {
-                audio.pause();
-                playBtn.innerText = '▶';
-            }
-        }
-
-        // Обновление прогресса
-        audio.ontimeupdate = () => {
-            if (audio.duration) {
-                progressBar.value = (audio.currentTime / audio.duration) * 100;
-            }
-        };
-
-        progressBar.oninput = () => {
-            if (audio.duration) {
-                audio.currentTime = (progressBar.value / 100) * audio.duration;
-            }
-        };
-    });
-</script>
 {% endblock %}

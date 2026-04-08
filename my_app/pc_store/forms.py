@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile, Artist
+from .models import Profile, Artist, Track
 
 class RegistrationForm(forms.ModelForm):
     # Добавляем выбор роли прямо в форму регистрации
@@ -18,3 +18,9 @@ class RegistrationForm(forms.ModelForm):
         if cleaned_data.get("password") != cleaned_data.get("password_confirm"):
             raise forms.ValidationError("Пароли не совпадают!")
         return cleaned_data
+    
+
+class TrackUploadForm(forms.ModelForm):
+    class Meta:
+        model = Track
+        fields = ['title', 'audio_file', 'cover']

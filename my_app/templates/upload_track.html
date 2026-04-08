@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .upload-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    .upload-container h1 { margin-top: 0; margin-bottom: 25px; font-size: 24px; }
+    
+    /* Стилизация стандартной формы Django под темную тему */
+    form p { margin-bottom: 20px; }
+    form label { display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 14px; }
+    
+    .btn-submit {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: 0.2s;
+    }
+    .btn-submit:hover { transform: scale(1.02); }
+</style>
+
+<div class="upload-container">
+    <h1>Загрузка нового трека</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-submit">Опубликовать трек</button>
+    </form>
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{% url 'profile' %}" style="color: var(--text-dim); font-size: 14px;">← Назад в профиль</a>
+    </div>
+</div>
+{% endblock %}

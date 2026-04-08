@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static 
 from django.contrib.auth import views as auth_views # Стандартные вьюхи для входа
 from pc_store.views import track_list, register_view, logout_view # Наши вьюхи
+from pc_store import views 
 
 urlpatterns = [
     # Панель администратора
@@ -20,6 +21,11 @@ urlpatterns = [
     
     # Выход (наша функция, чтобы сразу перенаправлять на главную)
     path('logout/', logout_view, name='logout'),
+
+    path('profile/', views.profile_view, name='profile'),
+    path('favorite/toggle/<int:track_id>/', views.toggle_favorite, name='toggle_favorite'),
+    path('album/<int:album_id>/', views.album_detail, name='album_detail'),
+    path('upload/', views.upload_track, name='upload_track'),
 ]
 
 # Обслуживание медиа-файлов (музыка, обложки) в режиме разработки
