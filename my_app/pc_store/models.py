@@ -10,13 +10,12 @@ class ListeningHistory(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-timestamp'] # Свежие прослушивания будут сверху
+        ordering = ['-timestamp'] 
 
     def __str__(self):
         return f"{self.user.username} послушал {self.track.title}"
     
 
-# 1. Профиль — расширяет стандартного Юзера
 class Profile(models.Model):
     ROLE_CHOICES = [
         ('listener', 'Слушатель'),
@@ -30,13 +29,13 @@ class Profile(models.Model):
 
     @property
     def favorite_album(self):
-        from .models import Album # Импортируем тут, чтобы не было конфликтов
+        from .models import Album 
         return Album.objects.filter(owner=self.user, is_favorite_folder=True).first()
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"
 
-# 2. Альбомы (и публичные, и локальные плейлисты)
+
 class Album(models.Model):
     title = models.CharField(max_length=200)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='albums')
@@ -48,7 +47,7 @@ class Album(models.Model):
     def __str__(self):
         return self.title
     
-# 3. Артист (Специфические данные для авторов)
+
 class Artist(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.TextField(blank=True, verbose_name="О себе")
@@ -57,7 +56,7 @@ class Artist(models.Model):
     def __str__(self):
         return self.user.username
 
-# 4. Треки
+
 class Track(models.Model):
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='tracks')
     title = models.CharField(max_length=200, verbose_name="Название")
@@ -65,7 +64,6 @@ class Track(models.Model):
     cover = models.ImageField(upload_to='covers/', blank=True, verbose_name="Обложка")
     genre = models.CharField(max_length=50, default='Rock', verbose_name="Жанр")
     plays = models.PositiveIntegerField(default=0, verbose_name="Прослушивания")
-    # Добавили дату выхода, как ты хотел
     release_date = models.DateField(auto_now_add=True, verbose_name="Дата выхода") 
     
     likes = models.ManyToManyField(User, related_name='liked_tracks', blank=True)
@@ -73,7 +71,7 @@ class Track(models.Model):
     def __str__(self):
         return f"{self.artist.user.username} - {self.title}"
 
-# Сигналы для автоматизации
+
 @receiver(post_save, sender=User)
 def create_user_assets(sender, instance, created, **kwargs):
     if created:

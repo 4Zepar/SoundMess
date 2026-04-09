@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0f0f0f;
-            --card-bg: #181818;
+            --bg-color: #131313;
+            --card-bg: #1a1a1a;
             --accent-color: #ff5000;
             --text-main: #ffffff;
             --text-dim: #b3b3b3;
@@ -29,9 +29,11 @@
         
         /* Шапка */
         header { 
-            background: rgba(0,0,0,0.8); 
+            background: rgba(14, 14, 14, 0.8); 
             backdrop-filter: blur(10px);
             padding: 0 30px; 
+            margin: 10px;
+            border-radius: 15px;
             display: flex; 
             justify-content: space-between; 
             align-items: center;
@@ -58,7 +60,7 @@
         /* Панель плеера (контейнер) */
         .player-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
-            background: #121212; 
+            background: #1c1c1c; 
             padding: 0 30px; 
             margin: 10px;
             border-radius: 15px;
@@ -148,7 +150,6 @@
 </div>
 
 <script>
-    /* Твой скрипт без изменений */
     const player = document.getElementById('main-player');
     const playBtn = document.getElementById('play-icon');
     const pauseBtn = document.getElementById('pause-icon');
@@ -177,6 +178,20 @@
                     playNewTrack(url, title, artist, row);
                 }
             });
+
+            const url = row.getAttribute('data-url'); // Берем ссылку на трек
+            const durationSpan = row.querySelector('.list-track-duration'); // Находим наш span
+
+            if (url && durationSpan) {
+                // Создаем виртуальный аудио-элемент в памяти браузера
+                const tempAudio = new Audio(url); 
+                
+                // Ждем, пока браузер подгрузит метаданные (информацию о файле)
+                tempAudio.addEventListener('loadedmetadata', () => {
+                    // Используем твою же функцию formatTime для красоты и вписываем в HTML
+                    durationSpan.innerText = formatTime(tempAudio.duration);
+                });
+            }
         });
     });
 
