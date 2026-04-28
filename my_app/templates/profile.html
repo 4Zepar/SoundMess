@@ -1,6 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
+    /* Навигация вкладок */
+    .profile-tabs {
+        display: flex; gap: 15px; margin: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;
+    }
+    
+    .tab-btn {
+        background: none; border: none; color: var(--text-dim);
+        padding: 8px 0; cursor: pointer; font-weight: 600;
+        font-size: 14px; transition: 0.2s; position: relative;
+    }
+    
+    .tab-btn:hover { color: white; }
+    
+    .tab-btn.active { color: var(--accent-color); }
+    .tab-btn.active::after {
+        content: ''; position: absolute; bottom: -11px; left: 0; 
+        width: 100%; height: 2px; background: var(--accent-color);
+    }
+
+    /* Логика скрытия */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     /* Перевели в вертикальный формат */
     .profile-container { 
         display: flex; flex-direction: column; gap: 20px; padding: 20px; 
@@ -56,8 +85,8 @@
         <h2 style="margin: 0 0 10px;">{{ user.username }}</h2>
         
         <div>
-            <span class="badge {% if profile.role == 'artist' %}badge-artist{% else %}badge-listener{% endif %}">
-                {{ profile.get_role_display }}
+            <span class="badge {% if user.profile.role == 'artist' %}badge-artist{% else %}badge-listener{% endif %}">
+                {{ user.profile.get_role_display }}
             </span>
             {% if user.is_staff or user.is_superuser %}
                 <span class="badge badge-admin">Админ</span>
@@ -67,7 +96,6 @@
         <p style="color: var(--text-dim); font-size: 13px; margin-top: 15px;">{{ profile.bio|default:"Биография не заполнена." }}</p>
         
         <div class="action-links">
-            <a href="#" style="color: var(--accent-color);">Редактировать</a>
             {% if user.is_staff or user.is_superuser %}
                 <a href="{% url 'admin:index' %}" style="color: #e74c3c;">Админ-панель</a>
             {% endif %}
@@ -78,45 +106,88 @@
     <div class="profile-card" style="border-color: var(--accent-color); display: flex; justify-content: space-between; align-items: center; padding: 15px 25px;">
         <h4 style="margin: 0;">Панель артиста</h4>
         <a href="{% url 'upload_track' %}" style="background: var(--accent-color); color: white; padding: 8px 15px; border-radius: 6px; font-weight: 600; text-decoration: none;">Загрузить трек</a>
+        <a href="{% url 'create_album' %}" style="background: var(--accent-color); color: white; padding: 8px 15px; border-radius: 6px; font-weight: 600; text-decoration: none;">Создать альбом</a>
     </div>
     {% endif %}
 
-    <section class="content-section">
-        <h3 style="margin-top: 0;">Мои Альбомы</h3>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            {% for album in my_albums %}
-                <a href="{% url 'album_detail' album.id %}" class="album-card">
-                    <div class="album-cover">
-                        {% if album.is_favorite_folder %}
-                            <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                            </svg>
-                        {% else %}
-                            <span>💿</span>
-                        {% endif %}
-                    </div>
-                    <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ album.title }}</div>
-                    <small style="color: var(--text-dim);">{{ album.tracks.count }} треков</small>
-                </a>
-            {% empty %}
-                <p style="color: var(--text-dim);">Альбомов пока нет.</p>
-            {% endfor %}
-        </div>
-    </section>
+    <div class="profile-tabs">
+        <button class="tab-btn active" onclick="showTab('albums', this)">Альбомы</button>
+        {% if user.profile.role == 'artist' %}
+            <button class="tab-btn" onclick="showTab('my-tracks', this)">Мои треки</button>
+        {% endif %}
+        <button class="tab-btn" onclick="showTab('history', this)">История</button>
+    </div>
 
-    <section class="content-section">
-        <h3 style="margin-top: 0;">Недавно прослушано</h3>
-        <div class="history-list">
-            {% for entry in history %}
-                <div class="history-item">
-                    <span>{{ entry.track.artist.user.username }} — <strong>{{ entry.track.title }}</strong></span>
-                    <span style="color: var(--text-dim);">{{ entry.timestamp|date:"d M, H:i" }}</span>
-                </div>
-            {% empty %}
-                <p style="color: var(--text-dim);">История пуста.</p>
-            {% endfor %}
-        </div>
-    </section>
+    <div id="albums" class="tab-content active">
+        <section class="content-section">
+            <h3 style="margin-top: 0;">Мои Альбомы</h3>
+            {% if user.profile.role != 'artist' %}
+                <a href="{% url 'create_album' %}" style="color: var(--accent-color); font-size: 13px; text-decoration: none;">+ Создать плейлист</a>
+            {% endif %}
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                {% for album in my_albums %}
+                    <a href="{% url 'album_detail' album.id %}" class="album-card">
+                        <div class="album-cover">
+                            {% if album.is_favorite_folder %}
+                                <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </svg>
+                            {% else %}
+                                <span>💿</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ album.title }}</div>
+                        <small style="color: var(--text-dim);">{{ album.tracks.count }} треков</small>
+                    </a>
+                {% empty %}
+                    <p style="color: var(--text-dim);">Альбомов пока нет.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    {% if user.profile.role == 'artist' %}
+    <div id="my-tracks" class="tab-content">
+        <section class="content-section">
+            <h3 style="margin-top: 0;">Мои загруженные треки</h3>
+            <div class="track-list" style="display: flex; flex-direction: column; gap: 5px;">
+                {% for track in my_tracks %}
+                    {% include "includes/track_item.html" with track=track %}
+                {% empty %}
+                    <p style="color: var(--text-dim);">Вы еще не загрузили ни одного трека.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+    {% endif %}
+
+    <div id="history" class="tab-content">
+        <section class="content-section">
+            <h3 style="margin-top: 0;">Недавно прослушано</h3>
+            <div class="history-list">
+                {% for entry in history %}
+                    <div class="history-item">
+                        <span>{{ entry.track.artist.user.username }} — <strong>{{ entry.track.title }}</strong></span>
+                        <span style="color: var(--text-dim);">{{ entry.timestamp|date:"d M, H:i" }}</span>
+                    </div>
+                {% empty %}
+                    <p style="color: var(--text-dim);">История пуста.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
 
 </div>
+
+<script>
+        function showTab(tabId, btn) {
+            // Скрываем всё
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            // Показываем выбранное
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+    </script>
 {% endblock %}

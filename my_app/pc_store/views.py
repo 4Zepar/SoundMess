@@ -1,10 +1,9 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from .models import Track, Artist, Profile, ListeningHistory, Album
 from .forms import RegistrationForm, TrackUploadForm
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-
+from .forms import AlbumForm
 
 def track_list(request):
     tracks = Track.objects.all()
@@ -41,14 +40,18 @@ def logout_view(request):
 
 @login_required 
 def profile_view(request):
-    profile = request.user.profile
+    # 1. Все альбомы пользователя (и личные плейлисты, и его релизы)
     my_albums = Album.objects.filter(owner=request.user)
-    history = ListeningHistory.objects.filter(user=request.user)[:10]
     
+    # 2. Если пользователь артист, достаем его треки
+    my_tracks = None
+    if request.user.profile.role == 'artist':
+        # Ищем треки через связь с артистом
+        my_tracks = Track.objects.filter(artist__user=request.user)
+
     context = {
-        'profile': profile,
         'my_albums': my_albums,
-        'history': history,
+        'my_tracks': my_tracks,
     }
     return render(request, 'profile.html', context)
 
@@ -100,3 +103,35 @@ def upload_track(request):
         form = TrackUploadForm()
     
     return render(request, 'upload_track.html', {'form': form})
+
+
+
+
+@login_required
+def create_album(request):
+    if request.method == 'POST':
+        form = AlbumForm(request.POST, user=request.user)
+        if form.is_valid():
+            # 1. Сначала сохраняем сам альбом, но не коммитим в базу треки
+            album = form.save(commit=False)
+            album.owner = request.user
+            album.save()
+
+            # 2. Берем треки, которые пользователь отметил в форме
+            selected_tracks = form.cleaned_data['tracks']
+
+            # 3. ПРОВЕРКА ПУБЛИЧНОСТИ
+            if album.is_public:
+                # Если релиз публичный — оставляем ТОЛЬКО те треки, где автор этот юзер
+                # Фильтруем QuerySet выбранных треков
+                final_tracks = selected_tracks.filter(artist__user=request.user)
+                album.tracks.set(final_tracks)
+            else:
+                # Если это приватный плейлист — сохраняем всё как есть (свои + лайки)
+                album.tracks.set(selected_tracks)
+
+            return redirect('profile')
+    else:
+        form = AlbumForm(user=request.user)
+    
+    return render(request, 'create_album.html', {'form': form})

@@ -16,6 +16,7 @@ urlpatterns = [
     path('favorite/toggle/<int:track_id>/', views.toggle_favorite, name='toggle_favorite'),
     path('album/<int:album_id>/', views.album_detail, name='album_detail'),
     path('upload/', views.upload_track, name='upload_track'),
+    path('album/create/', views.create_album, name='create_album'),
 ]
 
 if settings.DEBUG:

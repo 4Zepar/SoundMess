@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="profile-container">
+    <div class="content-section">
+        <h2 style="margin-top: 0;">Создание {% if user.profile.role == 'artist' %}альбома{% else %}плейлиста{% endif %}</h2>
+        
+        <form method="post" id="albumForm">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Название</label>
+                {{ form.title }}
+            </div>
+            
+            {% if user.profile.role == 'artist' %}
+                <div id="public-checkbox-wrapper">
+                    <label style="cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        {{ form.is_public }} {{ form.is_public.label }}
+                    </label>
+                    <p style="font-size: 12px; color: var(--text-dim); margin: 5px 0 0 28px;">
+                        В публичный релиз попадут только ваши авторские треки.
+                    </p>
+                </div>
+            {% else %}
+                <div style="display: none;">{{ form.is_public }}</div>
+            {% endif %}
+
+            <h3 style="margin: 25px 0 15px;">Выберите треки:</h3>
+            <div id="tracks-container" style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                {% for checkbox in form.tracks %}
+                    <div class="track-selection-item" 
+                         data-is-mine="{% if checkbox.data.value.instance.artist.user == user %}true{% else %}false{% endif %}">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 0;">
+                            {{ checkbox.tag }} 
+                            <span>{{ checkbox.choice_label }}</span>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 15px; align-items: center;">
+                <button type="submit" class="btn" style="background: var(--accent-color); color: white; padding: 12px 25px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;">
+                    Подтвердить
+                </button>
+                <a href="{% url 'profile' %}" style="color: var(--text-dim); text-decoration: none; font-size: 14px;">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    #id_title {
+        width: 100%; background: #282828; border: 1px solid #444; color: white;
+        padding: 12px; border-radius: 8px; outline: none;
+    }
+    #id_title:focus { border-color: var(--accent-color); }
+    
+    #public-checkbox-wrapper { 
+        background: rgba(29, 185, 84, 0.1); border: 1px solid rgba(29, 185, 84, 0.3); 
+        padding: 15px; border-radius: 10px; margin-bottom: 20px;
+    }
+
+    .track-selection-item { transition: 0.2s; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .track-selection-item:hover { background: rgba(255,255,255,0.05); }
+    .track-selection-item:last-child { border-bottom: none; }
+    
+    /* Стили для чекбоксов */
+    input[type="checkbox"] { accent-color: var(--accent-color); width: 18px; height: 18px; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const publicCheckbox = document.querySelector('input[name="is_public"]');
+    const trackItems = document.querySelectorAll('.track-selection-item');
+
+    function updateTracksVisibility() {
+        if (!publicCheckbox) return; // Если юзер не артист, чекбокса нет
+        
+        const isPublic = publicCheckbox.checked;
+
+        trackItems.forEach(item => {
+            const isMine = item.getAttribute('data-is-mine') === 'true';
+            
+            if (isPublic && !isMine) {
+                item.style.opacity = '0.3'; // Вместо полного скрытия можно сделать полупрозрачным
+                item.style.pointerEvents = 'none'; // Запрещаем нажимать
+                item.querySelector('input').checked = false;
+            } else {
+                item.style.opacity = '1';
+                item.style.pointerEvents = 'all';
+            }
+        });
+    }
+
+    if (publicCheckbox) {
+        publicCheckbox.addEventListener('change', updateTracksVisibility);
+        updateTracksVisibility();
+    }
+});
+</script>
+{% endblock %}
