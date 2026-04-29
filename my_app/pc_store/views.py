@@ -110,28 +110,22 @@ def upload_track(request):
 @login_required
 def create_album(request):
     if request.method == 'POST':
-        form = AlbumForm(request.POST, user=request.user)
+        # ВАЖНО: добавлен request.FILES
+        form = AlbumForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            # 1. Сначала сохраняем сам альбом, но не коммитим в базу треки
             album = form.save(commit=False)
             album.owner = request.user
             album.save()
-
-            # 2. Берем треки, которые пользователь отметил в форме
+            
+            # Логика фильтрации треков (как мы делали раньше)
             selected_tracks = form.cleaned_data['tracks']
-
-            # 3. ПРОВЕРКА ПУБЛИЧНОСТИ
             if album.is_public:
-                # Если релиз публичный — оставляем ТОЛЬКО те треки, где автор этот юзер
-                # Фильтруем QuerySet выбранных треков
                 final_tracks = selected_tracks.filter(artist__user=request.user)
                 album.tracks.set(final_tracks)
             else:
-                # Если это приватный плейлист — сохраняем всё как есть (свои + лайки)
                 album.tracks.set(selected_tracks)
-
+                
             return redirect('profile')
     else:
         form = AlbumForm(user=request.user)
-    
     return render(request, 'create_album.html', {'form': form})

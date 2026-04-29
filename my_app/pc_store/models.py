@@ -43,6 +43,12 @@ class Album(models.Model):
     is_favorite_folder = models.BooleanField(default=False) 
     is_public = models.BooleanField(default=False, verbose_name="Публичный релиз")
     created_at = models.DateTimeField(auto_now_add=True)
+    cover = models.ImageField(
+        upload_to='album_covers/', 
+        blank=True, 
+        null=True, 
+        verbose_name="Обложка альбома"
+    )
 
     def __str__(self):
         return self.title

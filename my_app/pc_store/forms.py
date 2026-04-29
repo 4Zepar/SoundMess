@@ -29,23 +29,20 @@ from django.db.models import Q
 class AlbumForm(forms.ModelForm):
     class Meta:
         model = Album
-        fields = ['title', 'is_public', 'tracks']
+        fields = ['title', 'cover', 'is_public', 'tracks'] 
         widgets = {
             'tracks': forms.CheckboxSelectMultiple(),
+            'cover': forms.FileInput(attrs={'class': 'file-input-custom'}),
         }
 
     def __init__(self, *args, **kwargs):
-        # Выцепляем юзера, которого передали из вьюхи
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
         if user:
-            # 1. Если не артист — скрываем выбор публичности
             if user.profile.role != 'artist':
                 self.fields['is_public'].widget = forms.HiddenInput()
 
-            # 2. ПОЛУЧАЕМ ТРЕКИ ИЗ АЛЬБОМА "ЛЮБИМОЕ"
-            # Мы ищем альбом, который принадлежит юзеру и является папкой избранного
             fav_album = Album.objects.filter(owner=user, is_favorite_folder=True).first()
             
             # Если такой альбом есть, берем его треки, иначе — пустой список
