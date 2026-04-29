@@ -40,13 +40,9 @@ def logout_view(request):
 
 @login_required 
 def profile_view(request):
-    # 1. Все альбомы пользователя (и личные плейлисты, и его релизы)
     my_albums = Album.objects.filter(owner=request.user)
-    
-    # 2. Если пользователь артист, достаем его треки
     my_tracks = None
     if request.user.profile.role == 'artist':
-        # Ищем треки через связь с артистом
         my_tracks = Track.objects.filter(artist__user=request.user)
 
     context = {
@@ -129,3 +125,53 @@ def create_album(request):
     else:
         form = AlbumForm(user=request.user)
     return render(request, 'create_album.html', {'form': form})
+
+
+@login_required
+def delete_album(request, album_id):
+    # Ищем альбом, который принадлежит юзеру
+    album = get_object_or_404(Album, id=album_id, owner=request.user)
+    
+    # Защита от удаления системного альбома
+    if not album.is_favorite_folder:
+        album.delete()
+        
+    return redirect('profile')
+
+from django.http import JsonResponse
+
+@login_required
+def add_track_to_album(request):
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        track_id = data.get('track_id')
+        album_id = data.get('album_id')
+        
+        track = get_object_or_404(Track, id=track_id)
+        # Ищем альбом, убеждаясь, что он принадлежит юзеру
+        album = get_object_or_404(Album, id=album_id, owner=request.user)
+        
+        if track not in album.tracks.all():
+            album.tracks.add(track)
+            return JsonResponse({'status': 'added'})
+        else:
+            return JsonResponse({'status': 'exists'})
+    
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+def remove_track_from_album(request):
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        track_id = data.get('track_id')
+        album_id = data.get('album_id')
+        
+        album = get_object_or_404(Album, id=album_id, owner=request.user)
+        track = get_object_or_404(Track, id=track_id)
+        
+        album.tracks.remove(track)
+        return JsonResponse({'status': 'removed'})
+    return JsonResponse({'status': 'error'}, status=400)

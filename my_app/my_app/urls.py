@@ -17,6 +17,9 @@ urlpatterns = [
     path('album/<int:album_id>/', views.album_detail, name='album_detail'),
     path('upload/', views.upload_track, name='upload_track'),
     path('album/create/', views.create_album, name='create_album'),
+    path('album/<int:album_id>/delete/', views.delete_album, name='delete_album'),
+    path('album/add-track/', views.add_track_to_album, name='add_track_to_album'),
+    path('album/remove-track/', views.remove_track_from_album, name='remove_track_from_album'),
 ]
 
 if settings.DEBUG:

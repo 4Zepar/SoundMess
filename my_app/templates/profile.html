@@ -1,6 +1,39 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
+
+    .album-card-wrapper {
+        position: relative;
+        width: 160px;
+    }
+
+    .delete-album-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ff4d4d;
+        opacity: 0; /* Скрыта по умолчанию */
+        transition: 0.3s;
+        z-index: 10;
+        text-decoration: none;
+    }
+
+    .album-card-wrapper:hover .delete-album-btn {
+        opacity: 1; /* Показываем при наведении */
+    }
+
+    .delete-album-btn:hover {
+        background: #ff4d4d;
+        color: white;
+        transform: scale(1.1);
+    }
     /* Навигация вкладок */
     .profile-tabs {
         display: flex; gap: 15px; margin: 10px 0;
@@ -126,23 +159,32 @@
             {% endif %}
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 {% for album in my_albums %}
-                    <a href="{% url 'album_detail' album.id %}" class="album-card">
-                        <div class="album-cover">
-                            {% if album.cover %}
-                                <img src="{{ album.cover.url }}" alt="{{ album.title }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-                            {% elif album.is_favorite_folder %}
-                                <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+
+                    <div class="album-card-wrapper">
+                        {% if not album.is_favorite_folder %}
+                            <a href="{% url 'delete_album' album.id %}" class="delete-album-btn" onclick="return confirm('Удалить этот альбом?')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                 </svg>
-                            {% else %}
-                                <span>💿</span>
-                            {% endif %}
-                        </div>
-                        <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ album.title }}</div>
-                        <small style="color: var(--text-dim);">{{ album.tracks.count }} треков</small>
-                    </a>
-                {% empty %}
-                    <p style="color: var(--text-dim);">Альбомов пока нет.</p>
+                            </a>
+                        {% endif %}
+
+                        <a href="{% url 'album_detail' album.id %}" class="album-card" style="margin: 0;">
+                            <div class="album-cover">
+                                {% if album.cover %}
+                                    <img src="{{ album.cover.url }}" alt="{{ album.title }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                                {% elif album.is_favorite_folder %}
+                                    <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                    </svg>
+                                {% else %}
+                                    <span>💿</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ album.title }}</div>
+                            <small style="color: var(--text-dim);">{{ album.tracks.count }} треков</small>
+                        </a>
+                    </div>
                 {% endfor %}
             </div>
         </section>
