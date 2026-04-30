@@ -20,6 +20,7 @@ urlpatterns = [
     path('album/<int:album_id>/delete/', views.delete_album, name='delete_album'),
     path('album/add-track/', views.add_track_to_album, name='add_track_to_album'),
     path('album/remove-track/', views.remove_track_from_album, name='remove_track_from_album'),
+    path('history/add/<int:track_id>/', views.add_to_history, name='add_to_history'),
 ]
 
 if settings.DEBUG:

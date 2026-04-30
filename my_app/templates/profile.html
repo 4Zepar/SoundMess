@@ -210,9 +210,16 @@
             <h3 style="margin-top: 0;">Недавно прослушано</h3>
             <div class="history-list">
                 {% for entry in history %}
-                    <div class="history-item">
-                        <span>{{ entry.track.artist.user.username }} — <strong>{{ entry.track.title }}</strong></span>
-                        <span style="color: var(--text-dim);">{{ entry.timestamp|date:"d M, H:i" }}</span>
+                    <div class="history-item" style="align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            {% if entry.track.cover %}
+                                <img src="{{ entry.track.cover.url }}" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 32px; height: 32px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px;">💿</div>
+                            {% endif %}
+                            <span>{{ entry.track.artist.user.username }} — <strong>{{ entry.track.title }}</strong></span>
+                        </div>
+                        <span style="color: var(--text-dim); font-size: 12px;">{{ entry.timestamp|date:"d M, H:i" }}</span>
                     </div>
                 {% empty %}
                     <p style="color: var(--text-dim);">История пуста.</p>

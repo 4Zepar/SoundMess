@@ -164,10 +164,12 @@
             row.addEventListener('click', (e) => {
                 if (e.target.closest('.like-button')) return;
                 const url = row.getAttribute('data-url');
+                const trackId = row.getAttribute('data-id');
                 const title = row.querySelector('.track-title').innerText;
                 const artist = row.querySelector('.track-artist').innerText;
-                if (currentActiveRow === row) { togglePlay(); } 
-                else {
+                if (currentActiveRow === row) { 
+                    togglePlay(); 
+                } else {
                     if (currentActiveRow) {
                         currentActiveRow.classList.remove('is-playing');
                         const p = currentActiveRow.querySelector('.icon-play');
@@ -175,7 +177,7 @@
                         if(p) p.style.display = 'block';
                         if(s) s.style.display = 'none';
                     }
-                    playNewTrack(url, title, artist, row);
+                    playNewTrack(url, title, artist, row, trackId);
                 }
             });
 
@@ -193,7 +195,7 @@
         });
     });
 
-    function playNewTrack(url, title, artist, row) {
+    function playNewTrack(url, title, artist, row, trackId) {
         player.src = url;
         trackTitle.innerText = title;
         trackArtist.innerText = artist;
@@ -201,6 +203,13 @@
         currentActiveRow.classList.add('is-playing');
         player.play();
         updateUI(true);
+
+        if (trackId) {
+        fetch(`/history/add/${trackId}/`)
+            .then(response => response.json())
+            .then(data => console.log('История обновлена'))
+            .catch(err => console.log('Ошибка истории:', err));
+        }
     }
 
     function togglePlay() {

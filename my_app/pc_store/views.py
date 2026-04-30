@@ -42,12 +42,17 @@ def logout_view(request):
 def profile_view(request):
     my_albums = Album.objects.filter(owner=request.user)
     my_tracks = None
+    
     if request.user.profile.role == 'artist':
         my_tracks = Track.objects.filter(artist__user=request.user)
+
+    history = ListeningHistory.objects.filter(user=request.user)[:10]
 
     context = {
         'my_albums': my_albums,
         'my_tracks': my_tracks,
+        'history': history,  
+        'profile': request.user.profile, 
     }
     return render(request, 'profile.html', context)
 
@@ -106,14 +111,12 @@ def upload_track(request):
 @login_required
 def create_album(request):
     if request.method == 'POST':
-        # ВАЖНО: добавлен request.FILES
         form = AlbumForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             album = form.save(commit=False)
             album.owner = request.user
             album.save()
             
-            # Логика фильтрации треков (как мы делали раньше)
             selected_tracks = form.cleaned_data['tracks']
             if album.is_public:
                 final_tracks = selected_tracks.filter(artist__user=request.user)
@@ -175,3 +178,13 @@ def remove_track_from_album(request):
         album.tracks.remove(track)
         return JsonResponse({'status': 'removed'})
     return JsonResponse({'status': 'error'}, status=400)
+
+
+
+def add_to_history(request, track_id):
+    if request.user.is_authenticated:
+        track = get_object_or_404(Track, id=track_id)
+        # Создаем запись в истории
+        ListeningHistory.objects.create(user=request.user, track=track)
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'not_authenticated'}, status=401)
