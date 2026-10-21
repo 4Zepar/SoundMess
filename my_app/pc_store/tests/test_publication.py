@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from pc_store.forms import TrackForm
-from pc_store.models import Artist, ModerationAction, Track
+from pc_store.models import Album, Artist, ModerationAction, Track
 from .base import AppTestCase, audio_upload
 
 
@@ -134,6 +134,71 @@ class PublicationTests(AppTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Сначала дождитесь одобрения')
         self.assertFalse(self.artist_user.albums.filter(title='Not ready').exists())
+
+    def test_release_track_tiles_only_offer_the_artists_own_tracks(self):
+        other_artist = Artist.objects.create(user=self.listener, moderation_status='approved')
+        foreign_track = self.make_track(artist=other_artist, title='Foreign song')
+        self.track.likes.add(self.artist_user)
+        self.login(self.artist_user)
+
+        response = self.client.get(reverse('create_release'))
+
+        self.assertContains(response, 'class="track-row track-choice"', count=1)
+        self.assertContains(response, f'data-url="{self.track.audio_url}"')
+        self.assertContains(response, 'data-liked="true"')
+        self.assertContains(response, '2:00')
+        self.assertContains(response, 'type="button" data-play-track')
+        self.assertNotContains(response, foreign_track.title)
+
+        response = self.client.post(reverse('create_release'), {
+            'title': 'Invalid selection', 'release_type': 'album',
+            'tracks': [foreign_track.pk], 'intent': 'draft',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('tracks', response.context['form'].errors)
+        self.assertFalse(Album.objects.filter(title='Invalid selection').exists())
+
+    def test_release_track_tiles_preserve_edit_and_invalid_post_selections(self):
+        another = self.make_track(title='Second song')
+        album = self.make_album()
+        self.login(self.artist_user)
+        url = reverse('edit_release', args=[album.pk])
+        initial_response = self.client.get(url)
+        invalid_response = self.client.post(url, {
+            'title': '', 'release_type': 'album', 'tracks': [another.pk], 'intent': 'draft',
+        })
+
+        for response, selected_id in [(initial_response, self.track.pk), (invalid_response, another.pk)]:
+            with self.subTest(selected_id=selected_id):
+                self.assertEqual(response.status_code, 200)
+                choices = response.context['form']['tracks']
+                selected = {choice.data['value'].value for choice in choices if choice.data['selected']}
+                self.assertEqual(selected, {selected_id})
+                for choice in choices:
+                    self.assertContains(response, choice.tag())
+
+        self.assertIn('title', invalid_response.context['form'].errors)
+        self.assertQuerySetEqual(album.tracks.all(), [self.track])
+
+    def test_release_track_tiles_save_and_remove_selected_tracks(self):
+        another = self.make_track(title='Second song')
+        self.login(self.artist_user)
+        response = self.client.post(reverse('create_release'), {
+            'title': 'Selected tracks', 'release_type': 'album',
+            'tracks': [self.track.pk, another.pk], 'intent': 'draft',
+        })
+
+        self.assertRedirects(response, reverse('artist_dashboard'))
+        album = Album.objects.get(title='Selected tracks', owner=self.artist_user)
+        self.assertSetEqual(set(album.tracks.all()), {self.track, another})
+
+        response = self.client.post(reverse('edit_release', args=[album.pk]), {
+            'title': album.title, 'release_type': 'album', 'tracks': [another.pk], 'intent': 'draft',
+        })
+
+        self.assertRedirects(response, reverse('artist_dashboard'))
+        self.assertQuerySetEqual(album.tracks.all(), [another])
 
     def test_hidden_track_removes_release_from_public_catalog(self):
         album = self.make_album()
