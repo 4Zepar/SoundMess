@@ -1,0 +1,11 @@
+<article class="comment-node" data-comment-id="{{ comment.id }}">
+    <div class="comment-author-avatar">
+        {% if comment.author.profile.avatar %}<img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}">{% else %}<span class="comment-avatar-placeholder"></span>{% endif %}
+    </div>
+    <div class="comment-body">
+        <div class="comment-meta"><strong>{{ comment.author.username }}</strong><button type="button" class="comment-timestamp" data-seconds="{{ comment.timestamp_seconds }}">{{ comment.timestamp_seconds|floatformat:0 }} сек.</button></div>
+        <p>{{ comment.text }}</p>
+        {% if user.is_authenticated %}<button type="button" class="reply-button" data-parent-id="{{ comment.id }}">Ответить</button><form class="reply-form" data-parent-id="{{ comment.id }}" hidden><input name="text" maxlength="1000" placeholder="Ваш ответ" required><button type="submit">Ответить</button></form>{% endif %}
+        {% with replies=comment.replies.all %}{% if replies %}<div class="comment-replies">{% for reply in replies %}{% include 'includes/comment_node.html' with comment=reply %}{% endfor %}</div>{% endif %}{% endwith %}
+    </div>
+</article>

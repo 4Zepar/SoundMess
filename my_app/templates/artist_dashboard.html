@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="dashboard-page">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+        <div><p class="eyebrow">Artist workspace</p><h1>Аналитика {{ artist.user.username }}</h1></div>
+        <a href="{% url 'upload_track' %}" class="dashboard-action">Загрузить трек</a>
+    </div>
+    <div class="dashboard-chart"><canvas id="plays-chart"></canvas></div>
+    <h2>Топ-5 треков</h2>
+    <div class="dashboard-list dashboard-table">
+        {% for track in top_tracks %}
+            <div class="dashboard-track"><span class="track-rank">{{ forloop.counter }}</span><strong>{{ track.title }}</strong><span class="muted">{{ track.plays_count }} прослушиваний</span><a class="secondary-action" href="{% url 'edit_track' track.id %}">Изменить</a></div>
+        {% empty %}<p class="muted">Загрузите первый трек, чтобы увидеть статистику.</p>{% endfor %}
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById('plays-chart'), {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{label: 'Прослушивания за 30 дней', data: {{ chart_values|safe }}, borderColor: '#ff5000', backgroundColor: 'rgba(255,80,0,.15)', fill: true, tension: .3}]
+    },
+    options: {responsive: true, maintainAspectRatio: false, scales: {y: {beginAtZero: true, ticks: {precision: 0}}}}
+});
+</script>
+{% endblock %}

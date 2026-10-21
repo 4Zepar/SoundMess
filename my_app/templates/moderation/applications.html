@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="moderation-page">
+    <p class="eyebrow">Moderation queue</p>
+    <h1>Заявки артистов</h1>
+    {% for application in applications %}
+        <article class="moderation-application">
+            <div>
+                <h2>{{ application.user.username }}</h2>
+                <p class="muted">{{ application.bio|default:'Описание не указано.' }}</p>
+                <small class="muted">{{ application.user.date_joined|date:'d.m.Y H:i' }}</small>
+            </div>
+            <form method="post" action="{% url 'review_artist_application' application.id %}">
+                {% csrf_token %}
+                <input type="text" name="note" placeholder="Комментарий модератора">
+                <button type="submit" name="decision" value="approved">Одобрить</button>
+                <button type="submit" name="decision" value="rejected" class="danger-button">Отклонить</button>
+            </form>
+        </article>
+    {% empty %}
+        <p class="muted">Новых заявок нет.</p>
+    {% endfor %}
+</section>
+{% endblock %}

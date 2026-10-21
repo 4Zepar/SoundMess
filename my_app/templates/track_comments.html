@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="comments-page">
+    <div class="comments-track-head">
+        {% if track.cover %}<img class="comments-track-cover" src="{{ track.cover.url }}" alt="{{ track.title }}">{% else %}<div class="comments-track-cover comments-track-placeholder">♪</div>{% endif %}
+        <div><p class="eyebrow">Комментарии</p><h1>{{ track.title }}</h1><p class="muted">{{ track.artist.user.username }}</p></div>
+    </div>
+    <div class="comments-compose">
+        {% if user.is_authenticated %}
+        <form id="root-comment-form" data-track-id="{{ track.id }}">
+            {% csrf_token %}<input type="text" name="text" maxlength="1000" placeholder="Написать комментарий на текущей секунде" required><button type="submit">Отправить</button>
+        </form>
+        {% else %}<p class="muted">Войдите, чтобы оставить комментарий.</p>{% endif %}
+    </div>
+    <div id="comments-tree" class="comments-tree">
+        {% for comment in comments %}
+            {% include 'includes/comment_node.html' with comment=comment %}
+        {% empty %}<p class="muted">Комментариев пока нет.</p>{% endfor %}
+    </div>
+</section>
+<script>
+(function () {
+    const tree = document.getElementById('comments-tree');
+    const form = document.getElementById('root-comment-form');
+    const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    const trackId = '{{ track.id }}';
+    function formatTime(seconds) { return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
+    function avatar(comment) { return comment.avatar ? `<img src="${comment.avatar}" alt="">` : '<span class="comment-avatar-placeholder"></span>'; }
+    function node(comment) {
+        const replies = (comment.replies || []).map(node).join('');
+        return `<article class="comment-node" data-comment-id="${comment.id}"><div class="comment-author-avatar">${avatar(comment)}</div><div class="comment-body"><div class="comment-meta"><strong>${escapeHtml(comment.author)}</strong><button type="button" class="comment-timestamp" data-seconds="${comment.timestamp_seconds}">${formatTime(comment.timestamp_seconds)}</button></div><p>${escapeHtml(comment.text)}</p><button type="button" class="reply-button" data-parent-id="${comment.id}">Ответить</button><form class="reply-form" data-parent-id="${comment.id}" hidden><input name="text" maxlength="1000" placeholder="Ваш ответ" required><button type="submit">Ответить</button></form><div class="comment-replies">${replies}</div></div></article>`;
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+    async function submit(text, parentId) {
+        const response = await fetch(`/track/${trackId}/comments/`, {method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken':csrf}, body: JSON.stringify({text, parent_id: parentId || null, timestamp_seconds: Math.floor(window.player?.currentTime || 0)})});
+        if (!response.ok) return;
+        window.location.reload();
+    }
+    form?.addEventListener('submit', event => { event.preventDefault(); submit(form.elements.text.value, null); });
+    tree.addEventListener('click', event => {
+        const timestamp = event.target.closest('.comment-timestamp');
+        if (timestamp) { if (window.player) { window.player.src = window.player.src; window.player.currentTime = Number(timestamp.dataset.seconds); window.player.play(); } return; }
+        const reply = event.target.closest('.reply-button');
+        if (reply) { const replyForm = reply.parentElement.querySelector('.reply-form'); replyForm.hidden = !replyForm.hidden; }
+    });
+    tree.addEventListener('submit', event => { const replyForm = event.target.closest('.reply-form'); if (!replyForm) return; event.preventDefault(); submit(replyForm.elements.text.value, replyForm.dataset.parentId); });
+})();
+</script>
+{% endblock %}

@@ -85,9 +85,19 @@
     .track-artist { color: var(--text-dim); font-size: 13px; }
     
     .track-meta { display: flex; align-items: center; gap: 15px; color: var(--text-dim); font-size: 13px; }
+    .track-comments { margin: -2px 16px 10px 79px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+    .comments-list { display: flex; flex-direction: column; gap: 4px; }
+    .comment-item { display: flex; gap: 10px; border: 0; background: none; color: var(--text-main); text-align: left; padding: 5px; cursor: pointer; }
+    .comment-time { color: var(--accent-color); min-width: 38px; }
+    .comment-form { display: flex; gap: 8px; margin-top: 8px; }
+    .comment-form input { margin: 0; }
+    .comments-empty, .comments-login { color: var(--text-dim); font-size: 13px; }
+    .comment-timeline { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .comment-timeline-input { flex: 1; margin: 0 !important; }
+    .comment-timeline-time { min-width: 38px; color: var(--accent-color); font-size: 12px; }
 </style>
 
-<div class="track-row" data-url="{{ track.audio_file.url }}" data-id="{{ track.id }}">
+<div class="track-row" data-url="{{ track.audio_file.url }}" data-id="{{ track.id }}" data-duration="{{ track.duration_seconds|default:'0' }}">
     <div class="track-icon-wrapper">
         {% if track.cover %}
             <img src="{{ track.cover.url }}" alt="cover">
@@ -102,10 +112,15 @@
     </div>
 
     <div class="track-meta">
-        <a href="{% url 'toggle_favorite' track.id %}" class="like-button" onclick="event.stopPropagation();">
-            <svg class="heart-icon {% if track in user.profile.favorite_album.tracks.all %}is-liked{% endif %}" viewBox="0 0 24 24" width="20" height="20">
+        {% if user.is_authenticated %}
+        <button type="button" class="like-button" data-track-id="{{ track.id }}" onclick="toggleLike(event, this)" aria-label="Поставить лайк" style="background: none; border: 0; padding: 0; cursor: pointer;">
+            <svg class="heart-icon {% if user.is_authenticated and track in user.liked_tracks.all %}is-liked{% endif %}" viewBox="0 0 24 24" width="20" height="20">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
+        </button>
+        {% endif %}
+        <a class="comments-toggle" href="{% url 'comment_page' track.id %}" aria-label="Комментарии" title="Комментарии" style="display: inline-flex; align-items: center; color: var(--text-dim);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 12.5z"/><path d="M8 8h8M8 11h5"/></svg>
         </a>
 
         {% if current_album and not current_album.is_favorite_folder %}
@@ -127,6 +142,7 @@
                 </svg>
             </button>
 
+            {% if user.is_authenticated %}
             <div id="menu-{{ track.id }}" class="context-menu">
                 <div class="menu-header">Добавить в альбом</div>
                 <div class="album-option-list">
@@ -159,61 +175,171 @@
                     </a>
                 </div>
             </div>
+            {% endif %}
         </div>
         <span class="list-track-duration">--:--</span>
     </div>
 </div>
 
+<div class="track-comments" data-track-id="{{ track.id }}" hidden>
+    <div class="comment-timeline" hidden>
+        <span class="comment-timeline-time">0:00</span>
+        <input class="comment-timeline-input" type="range" min="0" max="{{ track.duration_seconds|default:'0' }}" value="0" step="1" oninput="seekCommentTimeline(this)">
+    </div>
+    <div class="comments-list"></div>
+    {% if user.is_authenticated %}
+    <form class="comment-form" onsubmit="submitComment(event, this)">
+        <input type="text" name="text" maxlength="1000" placeholder="Комментарий на текущей секунде..." required>
+        <button type="submit">Отправить</button>
+    </form>
+    {% else %}
+    <p class="comments-login">Войдите, чтобы оставить комментарий с таймкодом.</p>
+    {% endif %}
+</div>
+
 <script>
-    // Функция открытия/закрытия меню
-function toggleMenu(event, menuId) {
-    event.stopPropagation(); // Чтобы не сработало проигрывание трека при клике на точки
-    
-    // Закрываем все другие открытые меню
-    document.querySelectorAll('.context-menu').forEach(m => {
-        if (m.id !== menuId) m.classList.remove('active');
-    });
 
-    const menu = document.getElementById(menuId);
-    menu.classList.toggle('active');
-}
+    function toggleMenu(event, menuId) {
+        event.stopPropagation();
 
-// Закрытие меню при клике в любом другом месте
-document.addEventListener('click', function() {
-    document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-});
+        document.querySelectorAll('.context-menu').forEach(m => {
+            if (m.id !== menuId) m.classList.remove('active');
+        });
 
-// Отправка запроса на добавление
-async function addToAlbum(trackId, albumId, element) {
-    const response = await fetch('/album/add-track/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}' // Не забудь про CSRF!
-        },
-        body: JSON.stringify({
-            track_id: trackId,
-            album_id: albumId
-        })
-    });
-
-    const result = await response.json();
-    
-    if (result.status === 'added') {
-        // Визуальное подтверждение
-        const btn = element.querySelector('.add-btn');
-        btn.innerHTML = '✓';
-        btn.style.color = '#1db954';
-        setTimeout(() => {
-            document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-            btn.innerHTML = '+';
-            btn.style.color = 'var(--accent-color)';
-        }, 1000);
-    } else if (result.status === 'exists') {
-        alert('Трек уже есть в этом альбоме');
-        setTimeout(() => {
-            document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-        }, 1000);
+        const menu = document.getElementById(menuId);
+        menu.classList.toggle('active');
     }
-}
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
+    });
+
+
+    async function addToAlbum(trackId, albumId, element) {
+        const response = await fetch('/album/add-track/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                track_id: trackId,
+                album_id: albumId
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'added') {
+            const btn = element.querySelector('.add-btn');
+            btn.innerHTML = '✓';
+            btn.style.color = '#1db954';
+            setTimeout(() => {
+                document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
+                btn.innerHTML = '+';
+                btn.style.color = 'var(--accent-color)';
+            }, 1000);
+        } else if (result.status === 'exists') {
+            alert('Трек уже есть в этом альбоме');
+            setTimeout(() => {
+                document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
+            }, 1000);
+        }
+    }
+</script>
+
+<script>
+    async function toggleLike(event, button) {
+        event.stopPropagation();
+        const response = await fetch(`/like/toggle/${button.dataset.trackId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (response.status === 401) {
+            window.location.href = '{% url "login" %}?next=' + encodeURIComponent(window.location.pathname);
+            return;
+        }
+        if (!response.ok) return;
+
+        const result = await response.json();
+        button.querySelector('.heart-icon').classList.toggle('is-liked', result.liked);
+    }
+
+    async function loadComments(trackId, panel) {
+        const response = await fetch(`/track/${trackId}/comments/`);
+        if (!response.ok) return;
+        const result = await response.json();
+        panel.querySelector('.comments-list').innerHTML = result.comments.map(comment => `
+            <button type="button" class="comment-item" onclick="seekToComment(${comment.timestamp_seconds})">
+                <span class="comment-time">${formatCommentTime(comment.timestamp_seconds)}</span>
+                <span><strong>${escapeCommentHtml(comment.author)}</strong> ${escapeCommentHtml(comment.text)}</span>
+            </button>
+        `).join('') || '<p class="comments-empty">Комментариев пока нет.</p>';
+        const timeline = panel.querySelector('.comment-timeline');
+        timeline.hidden = result.comments.length === 0;
+        if (result.comments.length) {
+            const latest = result.comments[result.comments.length - 1].timestamp_seconds;
+            timeline.querySelector('.comment-timeline-input').value = latest;
+            updateCommentTimelineLabel(timeline.querySelector('.comment-timeline-input'));
+        }
+    }
+
+    function toggleComments(event, button) {
+        event.stopPropagation();
+        const panel = button.closest('.track-row').nextElementSibling;
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden) loadComments(panel.dataset.trackId, panel);
+    }
+
+    function seekToComment(seconds) {
+        player.currentTime = seconds;
+        player.play();
+    }
+
+    function seekCommentTimeline(input) {
+        player.currentTime = Number(input.value);
+        updateCommentTimelineLabel(input);
+    }
+
+    function updateCommentTimelineLabel(input) {
+        input.closest('.comment-timeline').querySelector('.comment-timeline-time').textContent = formatCommentTime(input.value);
+    }
+
+    function formatCommentTime(seconds) {
+        return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    }
+
+    function escapeCommentHtml(value) {
+        return String(value).replace(/[&<>'"]/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[character]));
+    }
+
+    async function submitComment(event, form) {
+        event.preventDefault();
+        event.stopPropagation();
+        const panel = form.closest('.track-comments');
+        const response = await fetch(`/track/${panel.dataset.trackId}/comments/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                text: form.elements.text.value,
+                timestamp_seconds: Math.floor(player.currentTime || 0)
+            })
+        });
+        if (response.status === 401) {
+            window.location.href = '{% url "login" %}?next=' + encodeURIComponent(window.location.pathname);
+            return;
+        }
+        if (!response.ok) return;
+        form.reset();
+        loadComments(panel.dataset.trackId, panel);
+    }
 </script>

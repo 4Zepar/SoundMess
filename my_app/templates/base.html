@@ -16,12 +16,14 @@
             --hover-white: rgba(255, 255, 255, 0.05);
         }
 
+        * { box-sizing: border-box; }
+
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
             background: var(--bg-color); 
             color: var(--text-main); 
             margin: 0; 
-            padding-bottom: 90px; 
+            padding-bottom: 112px;
             min-height: 100vh;
         }
 
@@ -31,8 +33,8 @@
         header { 
             background: rgba(14, 14, 14, 0.8); 
             backdrop-filter: blur(10px);
-            padding: 0 30px; 
-            margin: 10px;
+            width: min(1200px, calc(100% - 48px));
+            margin: 16px auto;
             border-radius: 15px;
             display: flex; 
             justify-content: space-between; 
@@ -43,13 +45,16 @@
         }
 
         .logo { font-size: 20px; font-weight: 800; color: var(--accent-color); letter-spacing: 1px; }
-        .nav-links { display: flex; gap: 20px; align-items: center; font-size: 14px; font-weight: 500; }
+        .nav-links { display: flex; gap: 18px; align-items: center; font-size: 14px; font-weight: 500; }
+        .nav-links a { color: var(--text-dim); }
+        .nav-links a:hover, .nav-links a:focus-visible { color: var(--text-main); }
+        .nav-links .nav-primary { color: var(--text-main); }
 
         /* Контейнер контента */
         main { 
-            padding: 30px; 
-            max-width: 1200px; 
-            margin: 0 auto; 
+            width: min(1200px, calc(100% - 48px));
+            padding: 28px 0 44px;
+            margin: 0 auto;
         }
 
         /* Твои стили для лайков и состояний (не менял логику) */
@@ -59,15 +64,26 @@
 
         /* Панель плеера (контейнер) */
         .player-bar { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+            width: min(1200px, calc(100% - 24px));
             background: #1c1c1c; 
-            padding: 0 30px; 
-            margin: 10px;
+            padding: 10px 18px;
             border-radius: 15px;
             display: flex; align-items: center; 
             border-top: 1px solid var(--border-color); 
-            z-index: 1000; height: 80px;
+            z-index: 1000; min-height: 76px;
         }
+        .player-bar.is-empty .player-info,
+        .player-bar.is-empty .player-progress,
+        .player-bar.is-empty .player-volume,
+        .player-bar.is-empty .player-extra { display: none; }
+        .player-bar.is-empty { justify-content: center; opacity: .72; }
+        .player-empty-label { color: var(--text-dim); font-size: 13px; }
+        .player-info { width: 230px; display: flex; align-items: center; gap: 10px; margin-left: 18px; min-width: 0; }
+        .player-cover { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #282828; flex: 0 0 auto; }
+        .player-progress { flex: 1; display: flex; align-items: center; gap: 10px; margin: 0 24px; min-width: 0; }
+        .player-volume { display: flex; align-items: center; gap: 10px; }
+        .player-extra { display: flex; align-items: center; gap: 14px; color: var(--text-dim); }
 
         .btn-play-main { 
             background: var(--accent-color); color: white; 
@@ -79,7 +95,7 @@
         input[type=range] { accent-color: var(--accent-color); cursor: pointer; }
 
         /* Формы (общий стиль) */
-        input[type="text"], input[type="password"], input[type="email"], textarea, select {
+        input[type="text"], input[type="password"], input[type="email"], input[type="number"], input[type="url"], input[type="file"], textarea, select {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             color: white;
@@ -88,6 +104,11 @@
             width: 100%;
             margin-bottom: 15px;
         }
+        input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
+        input[type="file"] { padding: 8px; }
+        input[type="file"]::file-selector-button { background: #333; color: white; border: 0; border-radius: 5px; padding: 8px 12px; margin-right: 10px; cursor: pointer; }
         button[type="submit"] {
             background: var(--accent-color);
             color: white;
@@ -97,6 +118,85 @@
             font-weight: 600;
             cursor: pointer;
         }
+
+        .muted { color: var(--text-dim); }
+        .eyebrow { color: var(--accent-color); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+        .artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+        .artist-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+        .artist-card:hover { border-color: var(--accent-color); transform: translateY(-2px); }
+        .artist-card span { color: var(--text-dim); font-size: 13px; }
+        .artist-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--accent-color); color: white; font-size: 26px; font-weight: 800; }
+        .artist-avatar-large { width: 120px; height: 120px; font-size: 48px; }
+        .artist-hero { display: flex; gap: 24px; align-items: center; margin-bottom: 40px; }
+        .artist-hero h1 { margin: 4px 0 8px; }
+        .artist-actions, .profile-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .artist-albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin: 18px 0 36px; }
+        .artist-album-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .artist-album-card a { display: flex; flex-direction: column; gap: 8px; }
+        .artist-album-cover { aspect-ratio: 1; border-radius: 7px; background: #242424; display: grid; place-items: center; color: var(--accent-color); font-size: 42px; overflow: hidden; }
+        .artist-album-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .secondary-action { color: var(--text-dim); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; background: transparent; cursor: pointer; display: inline-block; }
+        .secondary-action:hover { color: var(--text-main); border-color: var(--accent-color); }
+        .balance-card, .form-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; }
+        .balance-card { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+        .balance-card strong, .balance-card span { display: block; }
+        .balance-card strong { font-size: 24px; margin: 5px 0; }
+        .form-card { width: min(720px, 100%); margin: 0 auto; }
+        #follow-button { background: var(--accent-color); color: white; border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer; font-weight: 600; }
+        .release-row { padding: 18px 0; border-bottom: 1px solid var(--border-color); }
+        .release-row h2 { margin: 4px 0; }
+        .moderation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+        .moderation-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .moderation-card strong { color: var(--accent-color); font-size: 32px; }
+        .moderation-application { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--border-color); }
+        .moderation-application h2 { margin: 0 0 6px; }
+        .moderation-application form { min-width: min(100%, 360px); }
+        .danger-button { background: #a83232 !important; }
+        .dashboard-chart { height: 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin: 24px 0; }
+        .dashboard-action { background: var(--accent-color); color: white; padding: 10px 16px; border-radius: 6px; font-weight: 600; }
+        .dashboard-list { background: var(--card-bg); border-top: 1px solid var(--border-color); }
+        .dashboard-track { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-color); }
+        .dashboard-track a { color: var(--accent-color); }
+        .form-page { max-width: 720px; margin: 0 auto; }
+        .support-balance { display: flex; align-items: center; gap: 14px; padding: 16px; background: #242424; border: 1px solid var(--border-color); border-radius: 8px; margin: 20px 0; }
+        .support-balance span { color: var(--text-dim); flex: 1; }
+        .support-balance strong { font-size: 20px; }
+        .support-history { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); color: var(--text-dim); }
+        .support-history strong { color: var(--text-main); }
+        .dashboard-table { overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; }
+        .dashboard-table .dashboard-track { padding: 15px 18px; background: var(--card-bg); }
+        .dashboard-table .dashboard-track:nth-child(even) { background: #202020; }
+        .track-rank { color: var(--accent-color); font-weight: 800; }
+        .user-directory { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+        .user-directory-row { display: grid; grid-template-columns: 42px 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .user-directory-row:hover { background: #242424; }
+        .user-directory-row small, .admin-item small { display: block; color: var(--text-dim); margin-top: 4px; }
+        .user-avatar-small { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-color); font-weight: 800; }
+        .user-detail-head { display: flex; align-items: center; gap: 18px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; margin: 24px 0; }
+        .moderation-section { padding: 22px 0; border-bottom: 1px solid var(--border-color); }
+        .moderation-section h2 { margin-top: 0; }
+        .balance-value { color: var(--accent-color); font-size: 24px; font-weight: 800; }
+        .inline-form { display: flex; gap: 10px; align-items: center; }
+        .inline-form input { margin: 0; max-width: 240px; }
+        .admin-item { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border-color); }
+        @media (max-width: 700px) {
+            header { padding: 0 16px; margin: 6px; }
+            .nav-links { gap: 10px; font-size: 12px; }
+            main { padding: 20px 16px; }
+            .artist-hero { align-items: flex-start; flex-direction: column; }
+            .artist-avatar-large { width: 88px; height: 88px; font-size: 34px; }
+            .moderation-application { align-items: stretch; flex-direction: column; }
+            .balance-card { align-items: stretch; flex-direction: column; }
+            .support-balance { align-items: stretch; flex-direction: column; }
+            .player-info { width: auto; flex: 1; }
+            .player-volume, .player-extra { display: none; }
+            .player-progress { margin: 0 8px; }
+            .player-cover { display: none; }
+            .user-directory-row { grid-template-columns: 36px 1fr; }
+            .user-directory-row > .muted { grid-column: 2; }
+            .inline-form { align-items: stretch; flex-direction: column; }
+            .inline-form input { max-width: none; }
+        }
     </style>
 </head>
 <body>
@@ -105,8 +205,10 @@
     <div class="logo">SOUNDMESS</div>
     <nav class="nav-links">
         <a href="{% url 'home' %}">Главная</a>
+        <a href="{% url 'artist_list' %}">Артисты</a>
         {% if user.is_authenticated %}
             <a href="{% url 'profile' %}">Профиль</a>
+            <a href="{% url 'feed' %}">Мои подписки</a>
             <a href="{% url 'logout' %}" style="opacity: 0.6;">Выход</a>
         {% else %}
             <a href="{% url 'login' %}">Войти</a>
@@ -119,7 +221,9 @@
     {% block content %}{% endblock %}
 </main>
 
-<div class="player-bar">
+<div class="player-bar is-empty" id="player-bar">
+    <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
+    <span class="player-empty-label" id="player-empty-label">Выберите трек, чтобы начать прослушивание</span>
     <audio id="main-player" ontimeupdate="updateProgress()"></audio>
     <div class="player-controls">
         <button class="btn-play-main" id="play-pause-btn" onclick="togglePlay()">
@@ -127,18 +231,19 @@
             <svg id="pause-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
         </button>
     </div>
-    <div style="width: 250px; display: flex; align-items: center; gap: 10px; margin-left: 20px;">
+    <div class="player-info">
+        <img id="player-cover" class="player-cover" alt="">
         <div class="track-info">
             <div id="player-track-title" class="track-title" style="font-weight:600;"></div>
             <div id="player-track-artist" class="track-artist" style="font-size:12px; color:var(--text-dim);"></div>
         </div>
     </div>
-    <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; margin: 0 30px;">
+    <div class="player-progress">
         <span id="current-time" style="font-size:11px; color:var(--text-dim); min-width:35px;">0:00</span>
         <input type="range" id="progress-bar" value="0" step="1" oninput="seek()" style="flex-grow:1;">
         <span id="total-time" style="font-size:11px; color:var(--text-dim); min-width:35px;">0:00</span>
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
+    <div class="player-volume">
         <button onclick="toggleMute()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
             <svg id="vol-icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path id="vol-high" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
@@ -146,6 +251,9 @@
             </svg>
         </button>
         <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="changeVolume()" style="width: 80px;">
+    </div>
+    <div class="player-extra" aria-hidden="true">
+        <span>⋮</span><span>☰</span>
     </div>
 </div>
 
@@ -156,13 +264,21 @@
     const progressBar = document.getElementById('progress-bar');
     const trackTitle = document.getElementById('player-track-title');
     const trackArtist = document.getElementById('player-track-artist');
+    const playerBar = document.getElementById('player-bar');
+    const playerEmptyLabel = document.getElementById('player-empty-label');
+    const playerCover = document.getElementById('player-cover');
     let currentActiveRow = null;
+    let playbackToken = null;
+    let playedSeconds = 0;
+    let lastObservedTime = 0;
+    let playCountSent = false;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        progressBar.value = 0;
+    function initTrackRows() {
         document.querySelectorAll('.track-row[data-url]').forEach(row => {
+            if (row.dataset.playerBound === 'true') return;
+            row.dataset.playerBound = 'true';
             row.addEventListener('click', (e) => {
-                if (e.target.closest('.like-button')) return;
+                if (e.target.closest('button, a, form, .track-comments')) return;
                 const url = row.getAttribute('data-url');
                 const trackId = row.getAttribute('data-id');
                 const title = row.querySelector('.track-title').innerText;
@@ -193,22 +309,63 @@
                 });
             }
         });
+        syncActiveRow();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedTrack = JSON.parse(localStorage.getItem('player-track') || 'null');
+        if (savedTrack) {
+            player.dataset.trackId = savedTrack.id || '';
+            trackTitle.innerText = savedTrack.title || '';
+            trackArtist.innerText = savedTrack.artist || '';
+            if (savedTrack.url) {
+                player.src = savedTrack.url;
+                player.currentTime = 0;
+            }
+            if (savedTrack.cover) playerCover.src = savedTrack.cover;
+            playerBar.classList.remove('is-empty');
+            playerEmptyLabel.hidden = true;
+        }
+        initTrackRows();
     });
+
+    function syncActiveRow() {
+        const activeId = player.dataset.trackId;
+        currentActiveRow = activeId ? document.querySelector(`.track-row[data-id="${activeId}"]`) : null;
+        if (currentActiveRow) {
+            currentActiveRow.classList.add('is-playing');
+            updateUI(!player.paused);
+            updateProgress();
+        } else if (!player.src) {
+            progressBar.value = 0;
+        }
+    }
 
     function playNewTrack(url, title, artist, row, trackId) {
         player.src = url;
         trackTitle.innerText = title;
         trackArtist.innerText = artist;
         currentActiveRow = row;
+        playbackToken = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+        playedSeconds = 0;
+        lastObservedTime = 0;
+        playCountSent = false;
         currentActiveRow.classList.add('is-playing');
+        player.dataset.trackId = trackId || '';
+        const cover = row.querySelector('.track-icon-wrapper img');
+        const coverUrl = cover ? cover.src : '';
+        localStorage.setItem('player-track', JSON.stringify({
+            id: trackId || '', title, artist, cover: coverUrl, url
+        }));
+        playerBar.classList.remove('is-empty');
+        playerEmptyLabel.hidden = true;
+        if (coverUrl) playerCover.src = coverUrl;
         player.play();
         updateUI(true);
 
         if (trackId) {
         fetch(`/history/add/${trackId}/`)
             .then(response => response.json())
-            .then(data => console.log('История обновлена'))
-            .catch(err => console.log('Ошибка истории:', err));
         }
     }
 
@@ -231,10 +388,31 @@
 
     function updateProgress() {
         if (!player.duration) return;
+        if (!player.paused) {
+            const elapsed = player.currentTime - lastObservedTime;
+            if (elapsed > 0 && elapsed <= 2) playedSeconds += elapsed;
+        }
+        lastObservedTime = player.currentTime;
+        if (!playCountSent && playedSeconds >= 30 && currentActiveRow) {
+            recordPlay(currentActiveRow.dataset.id);
+        }
         progressBar.max = player.duration;
         progressBar.value = player.currentTime;
         document.getElementById('current-time').innerText = formatTime(player.currentTime);
         document.getElementById('total-time').innerText = formatTime(player.duration);
+    }
+
+    async function recordPlay(trackId) {
+        playCountSent = true;
+        const response = await fetch(`/track/${trackId}/play/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.getElementById('csrf-token').value
+            },
+            body: JSON.stringify({ playback_token: playbackToken })
+        });
+        if (!response.ok) playCountSent = false;
     }
 
     function seek() { player.currentTime = progressBar.value; }
@@ -251,6 +429,76 @@
         if (player.muted || player.volume === 0) { h.style.display = 'none'; m.style.display = 'block'; } 
         else { h.style.display = 'block'; m.style.display = 'none'; }
     }
+
+    async function navigateWithoutReload(url, pushState = true) {
+        const response = await fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+        if (!response.ok) {
+            window.location.href = url;
+            return;
+        }
+        const html = await response.text();
+        const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+        const nextMain = nextDocument.querySelector('main');
+        const currentMain = document.querySelector('main');
+        if (!nextMain || !currentMain) {
+            window.location.href = url;
+            return;
+        }
+        const nextScripts = [...nextMain.querySelectorAll('script')].map(script => script.textContent);
+        currentMain.replaceChildren(...nextMain.childNodes);
+        document.title = nextDocument.title;
+        if (pushState) window.history.pushState({}, '', url);
+        nextScripts.forEach(scriptText => {
+            const replacement = document.createElement('script');
+            replacement.textContent = scriptText;
+            document.body.appendChild(replacement);
+            replacement.remove();
+        });
+        initTrackRows();
+    }
+
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (link.target === '_blank' || link.hasAttribute('download') || link.origin !== window.location.origin || link.pathname.startsWith('/admin/')) return;
+        if (link.pathname === window.location.pathname && link.search === window.location.search && link.hash) return;
+        event.preventDefault();
+        navigateWithoutReload(link.href).catch(() => { window.location.href = link.href; });
+    });
+
+    window.addEventListener('popstate', () => {
+        navigateWithoutReload(window.location.href, false).catch(() => { window.location.reload(); });
+    });
+
+    window.toggleMenu = function(event, menuId) {
+        event.preventDefault();
+        event.stopPropagation();
+        document.querySelectorAll('.context-menu').forEach(menu => {
+            if (menu.id !== menuId) menu.classList.remove('active');
+        });
+        const menu = document.getElementById(menuId);
+        if (menu) menu.classList.toggle('active');
+    };
+
+    window.addToAlbum = async function(trackId, albumId, element) {
+        const response = await fetch('/album/add-track/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.getElementById('csrf-token').value
+            },
+            body: JSON.stringify({track_id: trackId, album_id: albumId})
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        const button = element.querySelector('.add-btn');
+        if (result.status === 'added' && button) {
+            button.textContent = '✓';
+            setTimeout(() => document.querySelectorAll('.context-menu').forEach(menu => menu.classList.remove('active')), 700);
+        } else if (result.status === 'exists') {
+            window.alert('Трек уже есть в этом альбоме');
+        }
+    };
 </script>
 </body>
 </html>

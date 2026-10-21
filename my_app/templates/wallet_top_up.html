@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="form-card wallet-page">
+    <p class="eyebrow">Баланс</p><h1>Пополнить баланс</h1>
+    <p class="muted">Текущий баланс: <strong>{{ wallet.balance_usd|floatformat:2 }} USD</strong></p>
+    <form method="post">
+        {% csrf_token %}{{ form.as_p }}
+        <button type="submit">Пополнить баланс</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="moderation-page">
+    <p class="eyebrow">Moderation queue</p>
+    <h1>Комментарии</h1>
+    {% for comment in comments %}
+        <article class="moderation-application">
+            <div>
+                <strong>{{ comment.author.username }}</strong>
+                <span class="muted">к {{ comment.track.title }} · {{ comment.timestamp_seconds }} сек.</span>
+                <p class="{% if comment.is_hidden %}muted{% endif %}">{{ comment.text }}</p>
+            </div>
+            <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}">
+                {% csrf_token %}
+                <button type="submit">{% if comment.is_hidden %}Восстановить{% else %}Скрыть{% endif %}</button>
+            </form>
+        </article>
+    {% empty %}<p class="muted">Комментариев пока нет.</p>{% endfor %}
+</section>
+{% endblock %}

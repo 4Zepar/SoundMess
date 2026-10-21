@@ -31,6 +31,13 @@
     .track-artist { color: var(--text-dim); font-size: 13px; }
     
     .track-meta { display: flex; align-items: center; gap: 15px; color: var(--text-dim); font-size: 13px; }
+    .track-comments { margin: -2px 16px 10px 79px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+    .comments-list { display: flex; flex-direction: column; gap: 4px; }
+    .comment-item { display: flex; gap: 10px; border: 0; background: none; color: var(--text-main); text-align: left; padding: 5px; cursor: pointer; }
+    .comment-time { color: var(--accent-color); min-width: 38px; }
+    .comment-form { display: flex; gap: 8px; margin-top: 8px; }
+    .comment-form input { margin: 0; }
+    .comments-empty, .comments-login { color: var(--text-dim); font-size: 13px; }
     .heart-icon { fill: none; stroke: #b3b3b3; stroke-width: 2; transition: 0.2s; }
     .heart-icon.is-liked { fill: var(--accent-color); stroke: var(--accent-color); }
 </style>
@@ -53,14 +60,15 @@
                 <p style="text-transform: uppercase; font-size: 12px; font-weight: 700; margin: 0;">Альбом</p>
                 
                 {% if not album.is_favorite_folder and album.owner == user %}
-                    <a href="{% url 'delete_album' album.id %}" 
+                    <form method="post" action="{% url 'delete_album' album.id %}"
                     style="color: #ff4d4d; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 5px;"
-                    onclick="return confirm('Вы уверены?')">
+                    onsubmit="return confirm('Вы уверены?')">
+                        {% csrf_token %}
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                         Удалить альбом
-                    </a>
+                    </form>
                 {% endif %}
             </div>
             <h1>{{ album.title }}</h1>

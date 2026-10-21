@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="feed-page">
+    <h1>Мои подписки</h1>
+    <p class="muted">Новые публичные релизы артистов, на которых вы подписаны.</p>
+    {% for release in releases %}
+        <article class="release-row">
+            <div>
+                <p class="eyebrow">{{ release.owner.username }}</p>
+                <h2><a href="{% url 'album_detail' release.id %}">{{ release.title }}</a></h2>
+                <span class="muted">{{ release.created_at|date:'d.m.Y' }} · {{ release.tracks.count }} треков</span>
+            </div>
+        </article>
+    {% empty %}
+        <p class="muted">Подпишитесь на артиста, чтобы видеть его новые релизы.</p>
+    {% endfor %}
+</section>
+{% endblock %}

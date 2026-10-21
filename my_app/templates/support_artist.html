@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="form-card support-page">
+    <h1>Поддержать {{ artist.user.username }}</h1>
+    <div class="support-balance"><span>Доступно</span><strong>{{ wallet.balance_usd|floatformat:2 }} USD</strong><a href="{% url 'wallet_top_up' %}" class="secondary-action">Пополнить</a></div>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Отправить донат</button>
+    </form>
+    {% if donations %}
+        <h2>Ваши последние донаты</h2>
+        {% for donation in donations %}<div class="support-history"><span>{{ donation.created_at|date:'d.m.Y H:i' }}</span><strong>{{ donation.amount_usd|floatformat:2 }} USD</strong></div>{% endfor %}
+    {% endif %}
+</section>
+{% endblock %}
