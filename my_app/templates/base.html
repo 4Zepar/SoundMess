@@ -45,7 +45,7 @@
 
                     {% include 'includes/nav_link.html' with name='feed' label='Мои подписки' icon='feed' %}
 
-                    {% include 'includes/nav_link.html' with name='wallet_top_up' label='Демо-кошелёк' icon='wallet' %}
+                    {% include 'includes/nav_link.html' with name='wallet_top_up' label='Кошелёк' icon='wallet' %}
 
                 </div>
                 <div class="nav-section"><span class="nav-label">Для артистов</span>
@@ -213,6 +213,10 @@
                     </svg></button>
                 <button class="icon-button" id="player-next" aria-label="Следующий трек" disabled>
                     {% include 'includes/icon.html' with name='next' %}
+                </button>
+                <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
+                    title="Повторять текущий трек" aria-pressed="false">
+                    {% include 'includes/icon.html' with name='repeat' %}
                 </button>
             </div>
             <div class="player-timeline"><span id="current-time">0:00</span><input id="progress-bar" type="range"

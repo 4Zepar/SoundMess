@@ -726,7 +726,8 @@ input[type=file]::file-selector-button {
 }
 
 .track-list {
-    border-top: 1px solid var(--border);
+    display: grid;
+    gap: 10px;
 }
 
 .track-list-heading,
@@ -747,17 +748,30 @@ input[type=file]::file-selector-button {
 
 .track-row {
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 12px;
     min-height: 74px;
-    border-bottom: 1px solid #222;
+    background: rgb(255 255 255 / 3%);
+    border: 1px solid rgb(255 255 255 / 5%);
+    transition: background-color 160ms ease, border-color 160ms ease;
 }
 
-.track-row:hover {
-    background: #1b1b1b;
+.track-row+.track-row {
+    margin-top: 10px;
+}
+
+.track-list>.track-row+.track-row {
+    margin-top: 0;
+}
+
+.track-row:hover,
+.track-row:focus-within {
+    background: rgb(255 255 255 / 6%);
+    border-color: rgb(255 255 255 / 10%);
 }
 
 .track-row.is-playing {
-    background: #201b17;
+    background: rgb(255 98 15 / 9%);
+    border-color: rgb(255 98 15 / 18%);
 }
 
 .track-row.is-playing .track-title {
@@ -1688,7 +1702,7 @@ input[type=file]::file-selector-button {
     margin: 24px 0 12px;
 }
 
-.demo-notice {
+.wallet-notice {
     color: #898d97;
     font-size: 11px;
     line-height: 1.6;
@@ -1784,6 +1798,11 @@ input[type=file]::file-selector-button {
 .player-controls .icon {
     width: 17px;
     height: 17px;
+}
+
+.player-repeat.is-active {
+    color: var(--accent);
+    background: rgb(255 98 15 / 12%);
 }
 
 .player-timeline {
@@ -2136,7 +2155,7 @@ html.is-navigating::before {
     .track-row {
         grid-template-columns: 42px minmax(70px, 1fr) 105px;
         gap: 10px;
-        padding: 11px 2px;
+        padding: 11px 10px;
     }
 
     .track-art {
@@ -2343,7 +2362,7 @@ html.is-navigating::before {
     .player {
         bottom: calc(58px + env(safe-area-inset-bottom));
         padding: 10px 14px;
-        grid-template-columns: minmax(0, 1fr) 86px;
+        grid-template-columns: minmax(0, 1fr) 118px;
         gap: 10px;
         height: 74px;
     }

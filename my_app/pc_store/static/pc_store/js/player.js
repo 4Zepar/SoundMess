@@ -25,6 +25,7 @@ export class Player {
         this.session = null;
         this.lastSave = 0;
         this.ended = false;
+        this.repeat = false;
         this.pendingSeek = null;
         this.progress = document.getElementById('progress-bar');
         this.bind();
@@ -39,6 +40,7 @@ export class Player {
         document.getElementById('player-toggle').addEventListener('click', () => this.toggle());
         document.getElementById('player-next').addEventListener('click', () => this.next());
         document.getElementById('player-prev').addEventListener('click', () => this.previous());
+        document.getElementById('player-repeat').addEventListener('click', () => this.toggleRepeat());
         this.progress.addEventListener('input', () => {
             this.audio.currentTime = Number(this.progress.value);
             this.updateProgress();
@@ -69,11 +71,7 @@ export class Player {
                 this.sync();
             });
         }
-        this.audio.addEventListener('ended', () => {
-            this.updateProgress();
-            this.ended = true;
-            if (!this.next()) this.sync();
-        });
+        this.audio.addEventListener('ended', () => this.onEnded());
         this.audio.addEventListener('volumechange', () => {
             const muted = this.audio.muted || !this.audio.volume;
             const button = document.getElementById('player-mute');
@@ -102,6 +100,8 @@ export class Player {
         } catch {
             saved = null;
         }
+        this.repeat = saved?.repeat === true;
+        this.syncRepeat();
         this.audio.volume = Number.isFinite(saved?.volume) ? Math.max(0, Math.min(1, saved.volume)) : 0.8;
         if (!saved?.track?.id || !saved.track.url) return;
         const url = new URL(saved.track.url, location.origin);
@@ -119,6 +119,7 @@ export class Player {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 track: this.current, position: this.audio.currentTime || 0, volume: this.audio.volume,
+                repeat: this.repeat,
             }));
         } catch {
             // Playback remains available when browser storage is disabled.
@@ -176,6 +177,28 @@ export class Player {
     toggle() {
         if (this.audio.paused || this.audio.ended) this.play();
         else this.pause();
+    }
+
+    toggleRepeat() {
+        this.repeat = !this.repeat;
+        this.syncRepeat();
+        this.save();
+    }
+
+    syncRepeat() {
+        const button = document.getElementById('player-repeat');
+        const label = this.repeat ? 'Отключить повтор трека' : 'Повторять текущий трек';
+        button.classList.toggle('is-active', this.repeat);
+        button.setAttribute('aria-pressed', String(this.repeat));
+        button.setAttribute('aria-label', label);
+        button.title = label;
+    }
+
+    onEnded() {
+        this.updateProgress();
+        this.ended = true;
+        if (this.repeat && this.current) this.play();
+        else if (!this.next()) this.sync();
     }
 
     next() {

@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Демо-кошелёк
+Кошелёк
 {% endblock %}
 
 {% block content %}
 <div class="page-head">
     <div>
         <p class="eyebrow">Поддерживай любимое</p>
-        <h1>Демо-кошелёк</h1>
+        <h1>Кошелёк</h1>
         <p>Виртуальный баланс для поддержки артистов.</p>
     </div>
 </div>
@@ -33,8 +33,7 @@
             {% csrf_token %}
             {{ form.non_field_errors }}
             {% if confirmation %}
-            <p class="muted">На
-                демонстрационный баланс будет зачислено</p>
+            <p class="muted">На баланс будет зачислено</p>
             <p class="confirmation-amount">{{ confirmation_amount }} <span class="muted">USD</span></p>
             {{ form.amount.as_hidden }}<input type="hidden" name="confirm" value="yes">{{ form.token }}
             {% else %}
@@ -60,7 +59,7 @@
                 {% endif %}
             </div>
         </form>
-        <p class="demo-notice">Это учебная демонстрация оплаты. Реальные деньги не списываются и не зачисляются.</p>
+        <p class="wallet-notice">Средства виртуальные. Реальные деньги не списываются и не зачисляются.</p>
     </section>
     <section class="panel">
         <h2>История операций</h2>
