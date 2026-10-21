@@ -1,54 +1,63 @@
 {% extends 'base.html' %}
+{% load music %}
 
-{% block title %}
-Модерация комментариев
-{% endblock %}
+{% block title %}Модерация комментариев{% endblock %}
 
 {% block content %}
 <div class="page-head">
     <div>
         <p class="eyebrow">Модерация</p>
-        <h1>Комментарии</h1>
-        <p>Скрытый комментарий вместе с ответами исчезает из публичного обсуждения.</p>
+        <h1>Комментарии к песням</h1>
+        <p>Выбери песню, чтобы просмотреть обсуждение и изменить видимость комментариев.</p>
     </div>
 </div>
 {% include 'moderation/nav.html' %}
 
-{% for comment in comments %}
-<article class="review-item">
-    <div class="review-head">
-        <div>
-            <h3>{{ comment.author.username }}</h3>
-            <p><a href="{{ comment.track.get_absolute_url }}">{{ comment.track.title }}</a> ·
-                {{ comment.created_at|date:'d.m.Y H:i' }}
-            </p>
-        </div><span class="badge {% if comment.is_hidden %}badge-hidden{% else %}badge-approved{% endif %}">
-            {% if comment.is_hidden %}
-            Скрыт
-            {% else %}
-            Виден
-            {% endif %}
-        </span>
+<form method="get" class="comment-filters" data-filter-form>
+    {% for field in filter_form %}
+        {% include 'includes/field.html' %}
+    {% endfor %}
+    <div class="button-row">
+        <button class="btn btn-secondary" type="submit">Применить фильтры</button>
+        <a class="btn btn-ghost" href="{% url 'moderation_comments' %}">Сбросить</a>
     </div>
-    <p class="review-description">{{ comment.text }}</p>
-    <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}">
-        {% csrf_token %}
-        <input type="hidden" name="hidden" value="{{ comment.is_hidden|yesno:'false,true' }}"><button
-            class="btn btn-secondary">
-            {% if comment.is_hidden %}
-            Восстановить
-            {% else %}
-            Скрыть
-            {% endif %}
-        </button>
-    </form>
-</article>
-{% empty %}
-<div class="empty-state">
-    <h2>Комментариев пока нет</h2>
+</form>
+
+<div class="section-head">
+    <h2>Песни с комментариями</h2>
+    <small>{{ page_obj.paginator.count }} найдено</small>
 </div>
-{% endfor %}
+<div class="comment-track-list">
+    {% for track in tracks %}
+    <a class="comment-track-card" href="{% url 'moderation_track_comments' track.id %}?{{ detail_query }}">
+        <div class="track-art">
+            {% with cover=track.cover|image_url %}
+                {% if cover %}
+                <img src="{{ cover }}" alt="" loading="lazy">
+                {% else %}
+                <span class="art-placeholder">{% include 'includes/icon.html' with name='music' %}</span>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="track-info">
+            <strong class="track-title">{{ track.title }}</strong>
+            <span class="track-artist">{{ track.artist.user.username }} · {% if track.has_album %}Из альбома / EP{% else %}Отдельный трек{% endif %}</span>
+        </div>
+        <div class="comment-track-stats">
+            <strong>{{ track.comment_count }} комм.</strong>
+            {% if track.hidden_comment_count %}<small>{{ track.hidden_comment_count }} скрыто</small>{% endif %}
+            <small>{{ track.last_comment_at|date:'d.m H:i' }}</small>
+        </div>
+        {% include 'includes/icon.html' with name='chevron' small=True %}
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        {% include 'includes/icon.html' with name='comment' %}
+        <h2>Песни с комментариями не найдены</h2>
+        <p>Измени фильтры или дождись новых комментариев.</p>
+    </div>
+    {% endfor %}
+</div>
 
 {% include 'includes/pagination.html' %}
-
 {% endblock %}

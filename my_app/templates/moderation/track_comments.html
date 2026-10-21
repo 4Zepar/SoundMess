@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load music %}
+
+{% block title %}Комментарии: {{ track.title }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Модерация / Комментарии</p>
+        <h1>{{ track.title }}</h1>
+        <p>{{ track.artist.user.username }} · Комментариев: {{ comment_count }}</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'moderation_comments' %}{% if back_query %}?{{ back_query }}{% endif %}">К списку песен</a>
+</div>
+{% include 'moderation/nav.html' %}
+
+{% include 'includes/track_item.html' %}
+
+<div class="section-head"><h2>Обсуждение песни</h2></div>
+<p class="helptext comment-guidance">Здесь показаны все комментарии и ответы, включая скрытые. Скрытие комментария также убирает его ответы из публичного обсуждения.</p>
+
+{% for comment in comments %}
+<article class="review-item" id="comment-{{ comment.id }}">
+    <div class="review-head">
+        <div>
+            <h3>{{ comment.author.username }}</h3>
+            <p>{{ comment.created_at|date:'d.m.Y H:i' }} · {{ comment.timestamp_seconds|duration }}
+                {% if comment.parent_id %} · Ответ {{ comment.parent.author.username }}{% endif %}
+            </p>
+        </div>
+        <span class="badge {% if comment.is_hidden or comment.hidden_by_parent %}badge-hidden{% else %}badge-approved{% endif %}">
+            {% if comment.is_hidden %}Скрыт{% elif comment.hidden_by_parent %}Скрыт вместе с веткой{% else %}Виден{% endif %}
+        </span>
+    </div>
+    <p class="review-description">{{ comment.text }}</p>
+    <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+        {% csrf_token %}
+        <input type="hidden" name="hidden" value="{{ comment.is_hidden|yesno:'false,true' }}">
+        <button class="btn btn-secondary" type="submit">
+            {% if comment.is_hidden %}Восстановить{% else %}Скрыть{% endif %}
+        </button>
+    </form>
+</article>
+{% empty %}
+<div class="empty-state"><h2>У этой песни пока нет комментариев</h2></div>
+{% endfor %}
+
+{% include 'includes/pagination.html' %}
+{% endblock %}
