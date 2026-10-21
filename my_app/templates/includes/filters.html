@@ -1,0 +1,42 @@
+<form method="get" data-filter-form>
+    <div class="search-row">
+        <div class="search-box">
+            {% include 'includes/icon.html' with name='search' %}
+            <label class="sr-only" for="{{ filter_form.search.id_for_label }}">Поиск по
+                каталогу</label>{{ filter_form.search }}
+        </div>
+        <button class="btn btn-secondary" type="submit">Найти</button>
+    </div>
+    {% if filter_form.search.errors %}
+    <div class="errorlist">{{ filter_form.search.errors }}</div>
+    {% endif %}
+    <details class="filters" open>
+        <summary>
+            {% include 'includes/icon.html' with name='filter' small=True %}
+            Фильтры и сортировка</summary>
+        <div class="filters-grid">
+
+            {% for field in filter_form %}
+
+            {% if field.name != 'search' and field.name != 'has_lyrics' and field.name != 'explicit' %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+                {% for error in field.errors %}
+                <span class="errorlist">{{ error }}</span>
+                {% endfor %}
+            </label>
+            {% endif %}
+
+            {% endfor %}
+
+            <div class="filters-checks"><label>{{ filter_form.has_lyrics }} Только с
+                    текстом</label><label>{{ filter_form.explicit }} Без цензуры</label><a class="filter-reset"
+                    href="{{ request.path }}">Сбросить фильтры</a></div>
+        </div>
+    </details>
+    {% if filter_form.non_field_errors %}
+    <div class="alert alert-error" role="alert">
+        {{ filter_form.non_field_errors }}
+    </div>
+    {% endif %}
+
+</form>

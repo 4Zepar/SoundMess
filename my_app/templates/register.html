@@ -1,9 +1,32 @@
 {% extends 'base.html' %}
+
+{% block title %}
+Регистрация
+{% endblock %}
+
 {% block content %}
-<h2>Регистрация</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Создать аккаунт</button>
-</form>
+<section class="auth-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Твоё место в музыке</p>
+            <h1>Создать аккаунт</h1>
+            <p>Сохраняй треки, следи за артистами или делись своей музыкой.</p>
+        </div>
+    </div>
+    <div class="panel">
+        <form method="post">
+
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            <div class="button-row"><button class="btn" type="submit">Зарегистрироваться</button></div>
+        </form>
+    </div>
+    <p class="form-footer">Уже с нами? <a href="{% url 'login' %}">Войти</a></p>
+</section>
 {% endblock %}

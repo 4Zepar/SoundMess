@@ -1,25 +1,51 @@
 {% extends 'base.html' %}
 
+{% load music %}
+
+{% block title %}
+Модерация
+{% endblock %}
+
 {% block content %}
-<section class="moderation-page">
-    <p class="eyebrow">Staff workspace</p>
-    <h1>Панель модерации</h1>
-    <div class="moderation-grid">
-        <a class="moderation-card" href="{% url 'moderation_users' %}"><strong>→</strong><span>Пользователи</span></a>
-        <a class="moderation-card" href="{% url 'moderation_applications' %}">
-            <strong>{{ pending_artists_count }}</strong>
-            <span>Заявок артистов</span>
-        </a>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Рабочее пространство</p>
+        <h1>Модерация</h1>
+        <p>Новые заявки, публикации и решения команды.</p>
     </div>
-    <h2 class="moderation-list-title">Пользователи</h2>
-    <div class="user-directory">
-        {% for account in users %}
-            <a class="user-directory-row" href="{% url 'moderation_user_detail' account.id %}">
-                <span class="user-avatar-small">{{ account.username|first|upper }}</span>
-                <span><strong>{{ account.username }}</strong><small>{% if account.artist %}Артист{% else %}Слушатель{% endif %}</small></span>
-                <span class="muted">{{ account.wallet.balance_usd|floatformat:2 }} USD</span>
-            </a>
-        {% empty %}<p class="muted">Пользователей нет.</p>{% endfor %}
+</div>
+{% include 'moderation/nav.html' %}
+
+<div class="stats-grid">
+    <article class="stat-card">
+        <p class="eyebrow">Заявки артистов</p><strong>{{ pending_artists_count }}</strong><a
+            href="{% url 'moderation_applications' %}">Рассмотреть →</a>
+    </article>
+    <article class="stat-card">
+        <p class="eyebrow">Новые треки</p><strong>{{ pending_tracks_count }}</strong><a
+            href="{% url 'moderation_tracks' %}">Проверить →</a>
+    </article>
+    <article class="stat-card">
+        <p class="eyebrow">Новые релизы</p><strong>{{ pending_albums_count }}</strong><a
+            href="{% url 'moderation_albums' %}">Проверить →</a>
+    </article>
+</div>
+<section class="panel">
+    <h2>Последние действия</h2>
+    {% for action in actions %}
+    <div class="audit-row">
+        <strong>{{ action.actor.username|default:'Удалённый аккаунт' }}</strong>
+        <div>{{ action.action|action_label }}<small>{{ action.target_type|target_label }}
+                #{{ action.target_id }}
+                {% if action.note %}
+                · {{ action.note }}
+                {% endif %}
+            </small></div>
+        <time>{{ action.created_at|date:'d.m H:i' }}</time>
     </div>
+    {% empty %}
+    <p class="muted">Здесь появится история решений.</p>
+    {% endfor %}
+
 </section>
 {% endblock %}

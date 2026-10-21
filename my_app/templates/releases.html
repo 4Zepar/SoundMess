@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Релизы
+{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Слушай целиком</p>
+        <h1>Истории в музыке</h1>
+        <p>Альбомы, EP и микстейпы. У каждого релиза свой ритм.</p>
+    </div>
+</div>
+<nav class="tabs" aria-label="Каталог"><a class="tab" href="{% url 'home' %}">Треки</a><a class="tab is-active"
+        href="{% url 'release_list' %}" aria-current="page">Релизы <span
+            class="tab-count">{{ page_obj.paginator.count }}</span></a><a class="tab"
+        href="{% url 'artist_list' %}">Артисты</a></nav>
+
+{% include 'includes/filters.html' %}
+
+<div class="section-head">
+    <h2>Все релизы</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
+</div>
+
+{% if albums %}
+<div class="card-grid">
+    {% for album in albums %}
+
+    {% include 'includes/album_card.html' %}
+
+    {% endfor %}
+
+</div>
+{% else %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='disc' %}
+    <h2>Релизов пока нет</h2>
+    <p>Попробуйте изменить фильтры или загляните позже.</p>
+</div>
+{% endif %}
+
+{% include 'includes/pagination.html' %}
+
+{% endblock %}

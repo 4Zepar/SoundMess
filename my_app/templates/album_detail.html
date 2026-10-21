@@ -1,125 +1,115 @@
 {% extends 'base.html' %}
+
+{% load music %}
+
+{% block title %}
+{{ album.title }}
+{% endblock %}
+
 {% block content %}
-<style>
-    .album-page { max-width: 900px; margin: 0 auto; }
-    
-    /* Шапка альбома */
-    .album-header {
-        display: flex; gap: 30px; padding: 40px 0; align-items: flex-end;
-    }
-    
-    .album-cover-large {
-        width: 232px; height: 232px; background: #282828; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center; font-size: 80px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5); flex-shrink: 0;
-    }
-    .album-cover-large img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
-    
-    .album-info h1 { font-size: 48px; margin: 0 0 10px 0; }
-    .album-info p { color: var(--text-dim); margin: 0; }
 
-    /* Поиск и список */
-    .album-actions { margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
-    .search-input {
-        background: #282828; border: 1px solid transparent; color: white;
-        padding: 8px 16px; border-radius: 20px; width: 250px; outline: none;
-    }
-    .search-input:focus { border-color: var(--accent-color); }
-    
-    .track-info { flex-grow: 1; min-width: 0; }
-    .track-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
-    .track-artist { color: var(--text-dim); font-size: 13px; }
-    
-    .track-meta { display: flex; align-items: center; gap: 15px; color: var(--text-dim); font-size: 13px; }
-    .track-comments { margin: -2px 16px 10px 79px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-    .comments-list { display: flex; flex-direction: column; gap: 4px; }
-    .comment-item { display: flex; gap: 10px; border: 0; background: none; color: var(--text-main); text-align: left; padding: 5px; cursor: pointer; }
-    .comment-time { color: var(--accent-color); min-width: 38px; }
-    .comment-form { display: flex; gap: 8px; margin-top: 8px; }
-    .comment-form input { margin: 0; }
-    .comments-empty, .comments-login { color: var(--text-dim); font-size: 13px; }
-    .heart-icon { fill: none; stroke: #b3b3b3; stroke-width: 2; transition: 0.2s; }
-    .heart-icon.is-liked { fill: var(--accent-color); stroke: var(--accent-color); }
-</style>
+<section class="detail-hero">
+    <div class="detail-art">
+        {% with cover=album.cover|image_url %}
 
-<div class="album-page">
-    <div class="album-header">
-        <div class="album-cover-large">
-            {% if album.cover %}
-                <img src="{{ album.cover.url }}" alt="{{ album.title }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-            {% elif album.is_favorite_folder %}
-                <svg width="45" height="45" viewBox="0 0 24 24" fill="var(--accent-color)" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
+        {% if cover %}
+        <img src="{{ cover }}" alt="">
+        {% else %}
+        <span class="art-placeholder">
+            {% include 'includes/icon.html' with name='disc' %}
+        </span>
+        {% endif %}
+
+        {% endwith %}
+
+    </div>
+    <div class="detail-info">
+        <p class="eyebrow">
+            {% if album.is_favorite_folder %}
+            Любимые
+            треки
+            {% elif album.is_public %}
+            {{ album.get_release_type_display }}
             {% else %}
-                <span>💿</span>
+            Личный плейлист
             {% endif %}
-        </div>
-        <div class="album-info">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <p style="text-transform: uppercase; font-size: 12px; font-weight: 700; margin: 0;">Альбом</p>
-                
-                {% if not album.is_favorite_folder and album.owner == user %}
-                    <form method="post" action="{% url 'delete_album' album.id %}"
-                    style="color: #ff4d4d; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 5px;"
-                    onsubmit="return confirm('Вы уверены?')">
-                        {% csrf_token %}
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        Удалить альбом
-                    </form>
-                {% endif %}
-            </div>
-            <h1>{{ album.title }}</h1>
-            <p><strong>{{ album.owner.username }}</strong> • {{ tracks.count }} треков</p>
-        </div>
-    </div>
+        </p>
+        <h1>{{ album.title }}</h1>
+        <p>{{ album.owner.username }} · {{ tracks.count }} треков
+            {% if album.release_year %}
+            ·
+            {{ album.release_year }}
+            {% endif %}
+        </p>
+        {% if album.description %}
+        <p>{{ album.description }}</p>
+        {% endif %}
 
-    <div class="album-actions">
-        <input type="text" id="trackSearch" class="search-input" placeholder="Поиск в альбоме..." onkeyup="filterTracks()">
-    </div>
+        <div class="button-row">
 
-    <div class="track-list" id="trackList">
-        {% for track in tracks %}
-            {# Передаем текущий альбом в инклуд #}
-            {% include "includes/track_item.html" with track=track current_album=album %}
-        {% empty %}
-            <p style="color: var(--text-dim); text-align: center; padding: 40px;">Альбом пуст</p>
-        {% endfor %}
+            {% if album.is_public %}
+
+            {% include 'includes/status.html' with item=album %}
+
+            {% endif %}
+
+            {% if user == album.owner and not album.is_favorite_folder %}
+            <a class="btn btn-secondary"
+                href="{% if album.is_public %}{% url 'edit_release' album.id %}{% else %}{% url 'edit_album' album.id %}{% endif %}">
+                {% include 'includes/icon.html' with name='edit' small=True %}
+                Изменить</a>
+            <form method="post" action="{% url 'delete_album' album.id %}"
+                data-confirm="Удалить «{{ album.title }}»? Треки останутся в каталоге.">
+                {% csrf_token %}
+                <button class="btn btn-ghost">
+                    {% include 'includes/icon.html' with name='trash' small=True %}
+                    Удалить</button>
+            </form>
+
+            {% elif album.is_public and album.moderation_status == 'approved' %}
+            <form method="post" action="{% url 'add_album_to_favorites' album.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="saved" value="{{ is_saved|yesno:'false,true' }}"><button
+                    class="btn btn-secondary">
+                    {% include 'includes/icon.html' with name='library' small=True %}
+
+                    {% if is_saved %}
+                    Убрать
+                    из медиатеки
+                    {% else %}
+                    В медиатеку
+                    {% endif %}
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
     </div>
+</section>
+
+{% if album.owner == user and album.moderation_note %}
+<p class="alert alert-info">{{ album.moderation_note }}</p>
+
+{% endif %}
+
+<div class="section-head">
+    <h2>Треки</h2>
+</div>
+{% if tracks %}
+<div class="track-list">
+
+    {% for track in tracks %}
+
+    {% include 'includes/track_item.html' with current_album=album %}
+
+    {% endfor %}
 </div>
 
-<script>
-function filterTracks() {
-    let input = document.getElementById('trackSearch').value.toLowerCase();
-    let rows = document.getElementsByClassName('track-row');
-    for (let row of rows) {
-        let title = row.querySelector('.track-title').innerText.toLowerCase();
-        row.style.display = title.includes(input) ? "flex" : "none";
-    }
-}
-async function removeFromAlbum(event, trackId, albumId) {
-    event.stopPropagation(); // Чтобы не включился плеер
-    if (!confirm('Удалить трек из альбома?')) return;
+{% else %}
+<div class="empty-state">
+    <h2>Здесь пока тихо</h2>
+    <p>Добавьте треки в редакторе плейлиста или релиза.</p>
+</div>
+{% endif %}
 
-    const response = await fetch('{% url "remove_track_from_album" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({ track_id: trackId, album_id: albumId })
-    });
-
-    const result = await response.json();
-    if (result.status === 'removed') {
-        // Находим строку трека и удаляем её с анимацией
-        const trackRow = event.target.closest('.track-row');
-        trackRow.style.opacity = '0';
-        trackRow.style.transform = 'translateX(20px)';
-        setTimeout(() => trackRow.remove(), 300);
-    }
-}
-</script>
 {% endblock %}

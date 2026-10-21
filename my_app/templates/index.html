@@ -1,39 +1,56 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
+{% block title %}
+Треки
+{% endblock %}
 
 {% block content %}
-    <h1 style="margin-bottom: 30px;">Каталог треков</h1>
 
-    <form method="get" class="catalog-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; padding: 16px; background: var(--card-bg); border-radius: 10px;">
-        <div style="grid-column: 1 / -1;">
-            {{ filter_form.search.label_tag }}
-            {{ filter_form.search }}
-        </div>
-        {{ filter_form.genre }}
-        {{ filter_form.mood }}
-        {{ filter_form.release_type }}
-        {{ filter_form.duration }}
-        {{ filter_form.release_year_from }}
-        {{ filter_form.release_year_to }}
-        {{ filter_form.sort }}
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
-            {{ filter_form.has_lyrics }} Только с текстом
-        </label>
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--text-dim);">
-            {{ filter_form.explicit }} Без цензуры
-        </label>
-        <div style="display: flex; align-items: end; gap: 10px;">
-            <button type="submit">Применить</button>
-            <a href="{% url 'home' %}" style="color: var(--text-dim);">Сбросить</a>
-        </div>
-    </form>
-    
-    <div class="track-list" style="display: flex; flex-direction: column; gap: 4px;">
-        {% for track in tracks %}
-            {% include "includes/track_item.html" with track=track %}
-        {% empty %}
-            <div style="text-align: center; padding: 50px; color: #b3b3b3;">
-                <p>Треков пока нет. Загрузи первый в админке или через профиль!</p>
-            </div>
-        {% endfor %}
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Открывай новое</p>
+        <h1>Твоя следующая находка</h1>
+        <p>Треки под настроение. Музыка, которую захочется оставить с собой.</p>
     </div>
+    {% if current_artist.moderation_status == 'approved' %}
+    <a class="btn btn-secondary" href="{% url 'upload_track' %}">
+        {% include 'includes/icon.html' with name='upload' small=True %}
+        Загрузить
+        трек</a>
+    {% endif %}
+
+</div>
+<nav class="tabs" aria-label="Каталог"><a class="tab is-active" href="{% url 'home' %}" aria-current="page">Треки <span
+            class="tab-count">{{ page_obj.paginator.count }}</span></a><a class="tab"
+        href="{% url 'release_list' %}">Релизы</a><a class="tab" href="{% url 'artist_list' %}">Артисты</a></nav>
+
+{% include 'includes/filters.html' %}
+
+<div class="section-head">
+    <h2>Все треки</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
+</div>
+
+{% if tracks %}
+<div class="track-list-heading" aria-hidden="true"><span>#</span><span>Название / артист</span><span
+        class="track-genre">Жанр</span><span class="track-stat">Слушают</span><span
+        class="track-duration">Время</span><span></span></div>
+<div class="track-list">
+    {% for track in tracks %}
+
+    {% include 'includes/track_item.html' %}
+
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='search' %}
+    <h2>Пока ничего не найдено</h2>
+    <p>Попробуйте изменить фильтры или вернитесь позже за новыми треками.</p><a class="btn btn-secondary"
+        href="{% url 'home' %}">Сбросить фильтры</a>
+</div>
+{% endif %}
+
+{% include 'includes/pagination.html' %}
+
 {% endblock %}

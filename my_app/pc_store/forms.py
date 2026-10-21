@@ -1,153 +1,230 @@
 from decimal import Decimal
+from math import isfinite
+from pathlib import Path
 
 from django import forms
-from django.contrib.auth.models import User
-from .models import Profile, Artist, Track, Album  
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from mutagen import File as AudioFile, MutagenError
+
+from .constants import GENRES, MOODS, TEMPOS, ReleaseType
+from .models import Album, Artist, Profile, Track
+
+
+class StyledFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault(
+                'class',
+                'checkbox' if isinstance(field.widget, forms.CheckboxInput) else 'input'
+            )
+            if isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.setdefault('rows', 5)
 
 
 def validate_audio_upload(upload):
-    allowed_extensions = {'.mp3', '.wav', '.ogg', '.m4a'}
-    extension = upload.name.lower().rsplit('.', 1)[-1] if '.' in upload.name else ''
-    if f'.{extension}' not in allowed_extensions:
-        raise forms.ValidationError('Разрешены только MP3, WAV, OGG и M4A.')
+    if Path(upload.name).suffix.lower() not in {'.mp3', '.wav', '.ogg', '.m4a'}:
+        raise ValidationError('Разрешены только MP3, WAV, OGG и M4A.')
     if upload.size > 50 * 1024 * 1024:
-        raise forms.ValidationError('Размер аудиофайла не должен превышать 50 МБ.')
+        raise ValidationError('Размер аудиофайла не должен превышать 50 МБ.')
 
 
 def validate_cover_upload(upload):
-    allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
-    extension = upload.name.lower().rsplit('.', 1)[-1] if '.' in upload.name else ''
-    if f'.{extension}' not in allowed_extensions:
-        raise forms.ValidationError('Разрешены только JPG, PNG и WebP.')
+    if Path(upload.name).suffix.lower() not in {'.jpg', '.jpeg', '.png', '.webp'}:
+        raise ValidationError('Разрешены только JPG, PNG и WebP.')
     if upload.size > 5 * 1024 * 1024:
-        raise forms.ValidationError('Размер обложки не должен превышать 5 МБ.')
-
-class RegistrationForm(forms.ModelForm):
-    role = forms.ChoiceField(choices=Profile.ROLE_CHOICES, label="Кто вы?")
-    password = forms.CharField(widget=forms.PasswordInput, label="Пароль")
-    password_confirm = forms.CharField(widget=forms.PasswordInput, label="Подтвердите пароль")
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if cleaned_data.get("password") != cleaned_data.get("password_confirm"):
-            raise forms.ValidationError("Пароли не совпадают!")
-        return cleaned_data
+        raise ValidationError('Размер изображения не должен превышать 5 МБ.')
 
 
-class ProfileForm(forms.ModelForm):
+class RegistrationForm(StyledFormMixin, UserCreationForm):
+    role = forms.ChoiceField(choices=Profile.ROLE_CHOICES, label='Тип аккаунта')
+
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ('username', 'email', 'role')
+
+
+class ProfileForm(StyledFormMixin, forms.ModelForm):
+    avatar = forms.ImageField(required=False, validators=[validate_cover_upload], label='Аватар')
+
     class Meta:
         model = Profile
         fields = ['bio', 'avatar']
-        widgets = {'bio': forms.Textarea(attrs={'rows': 4})}
-    
 
-class TrackUploadForm(forms.ModelForm):
-    audio_file = forms.FileField(validators=[validate_audio_upload])
-    cover = forms.ImageField(required=False, validators=[validate_cover_upload])
+
+class ArtistApplicationForm(StyledFormMixin, forms.ModelForm):
+    bio = forms.CharField(max_length=2000, label='Расскажите о своей музыке', widget=forms.Textarea)
+
+    class Meta:
+        model = Artist
+        fields = ['bio']
+
+
+class TrackForm(StyledFormMixin, forms.ModelForm):
+    audio_file = forms.FileField(
+        validators=[validate_audio_upload],
+        label='Аудиофайл',
+        help_text='MP3, WAV, OGG или M4A, до 50 МБ.'
+    )
+    cover = forms.ImageField(
+        required=False,
+        validators=[validate_cover_upload],
+        label='Обложка',
+        help_text='JPG, PNG или WebP, до 5 МБ.'
+    )
 
     class Meta:
         model = Track
         fields = [
-            'title', 'audio_file', 'cover', 'genre', 'release_year',
-            'release_type', 'duration_seconds', 'mood', 'lyrics', 'is_explicit',
+            'title',
+            'audio_file',
+            'cover',
+            'genre',
+            'mood',
+            'tempo',
+            'release_year',
+            'release_type',
+            'lyrics',
+            'is_explicit'
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['audio_file'].required = not self.instance.pk
+        self.fields['release_year'].min_value = 1900
+        self.fields['release_year'].max_value = timezone.localdate().year + 1
+        self.fields['lyrics'].help_text = 'Необязательное поле. До 30 000 символов.'
 
-class TrackMetadataForm(forms.ModelForm):
-    cover = forms.ImageField(required=False, validators=[validate_cover_upload])
+    def clean_audio_file(self):
+        upload = self.cleaned_data.get('audio_file')
+        if not upload or not hasattr(upload, 'content_type'):
+            return upload
+        try:
+            upload.seek(0)
+            audio = AudioFile(upload)
+            if audio is None or not isfinite(audio.info.length) or not 0 < audio.info.length <= 86400:
+                raise ValidationError('Не удалось прочитать аудиофайл. Проверьте его формат.')
+            self.instance.duration_seconds = max(1, round(audio.info.length))
+        except (MutagenError, OSError, ValueError, EOFError) as error:
+            raise ValidationError('Аудиофайл повреждён или его формат не поддерживается.') from error
+        finally:
+            upload.seek(0)
+        return upload
 
-    class Meta:
-        model = Track
-        fields = [
-            'title', 'cover', 'genre', 'release_year', 'release_type',
-            'duration_seconds', 'mood', 'lyrics', 'is_explicit',
-        ]
 
-
-class TrackFilterForm(forms.Form):
-    search = forms.CharField(required=False, label='Поиск')
-    genre = forms.CharField(required=False, label='Жанр')
-    mood = forms.CharField(required=False, label='Настроение')
+class TrackFilterForm(StyledFormMixin, forms.Form):
+    search = forms.CharField(
+        required=False,
+        max_length=200,
+        label='Поиск',
+        widget=forms.TextInput(attrs={'placeholder': 'Трек, артист или релиз', 'type': 'search'})
+    )
+    genre = forms.ChoiceField(required=False, choices=[('', 'Все жанры'), *GENRES], label='Жанр')
+    mood = forms.ChoiceField(required=False, choices=[('', 'Любое настроение'), *MOODS], label='Настроение')
+    tempo = forms.ChoiceField(required=False, choices=[('', 'Любой темп'), *TEMPOS], label='Темп')
     release_year_from = forms.IntegerField(required=False, min_value=1900, label='Год от')
     release_year_to = forms.IntegerField(required=False, min_value=1900, label='Год до')
     release_type = forms.ChoiceField(
         required=False,
-        choices=[('', 'Любой тип')] + Track.RELEASE_TYPE_CHOICES,
-        label='Тип релиза',
+        choices=[('', 'Любой релиз'), *ReleaseType.choices],
+        label='Тип релиза'
     )
     duration = forms.ChoiceField(
         required=False,
         choices=[
             ('', 'Любая длительность'),
-            ('short', 'Синглы до 3 минут'),
-            ('standard', 'Стандарт 3-5 минут'),
-            ('long', 'Длинные более 5 минут'),
+            ('short', 'До 3 минут'),
+            ('standard', '3–5 минут'),
+            ('long', 'Более 5 минут')
         ],
-        label='Длительность',
+        label='Длительность'
     )
     has_lyrics = forms.BooleanField(required=False, label='Только с текстом')
-    explicit = forms.BooleanField(required=False, label='Только без цензуры')
+    explicit = forms.BooleanField(required=False, label='Без цензуры')
     sort = forms.ChoiceField(
         required=False,
         choices=[
             ('newest', 'Сначала новые'),
-            ('popular', 'По популярности'),
-            ('liked', 'По лайкам'),
+            ('popular', 'По прослушиваниям'),
+            ('liked', 'По лайкам')
         ],
-        initial='newest',
-        label='Сортировка',
+        label='Сортировка'
     )
 
+    def clean(self):
+        data = super().clean()
+        start, end = data.get('release_year_from'), data.get('release_year_to')
+        if start and end and start > end:
+            raise ValidationError('Начальный год не может быть больше конечного.')
+        return data
 
-from django.db.models import Q
 
-class AlbumForm(forms.ModelForm):
+class AlbumForm(StyledFormMixin, forms.ModelForm):
+    cover = forms.ImageField(required=False, validators=[validate_cover_upload], label='Обложка')
+
     class Meta:
         model = Album
-        fields = ['title', 'cover', 'is_public', 'tracks'] 
-        widgets = {
-            'tracks': forms.CheckboxSelectMultiple(),
-            'cover': forms.FileInput(attrs={'class': 'file-input-custom'}),
-        }
+        fields = ['title', 'description', 'cover', 'release_type', 'release_year', 'tracks']
+        widgets = {'tracks': forms.CheckboxSelectMultiple()}
 
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
+    def __init__(self, *args, user, public=False, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        if user:
-            if user.profile.role != 'artist':
-                self.fields['is_public'].widget = forms.HiddenInput()
+        self.public = public
+        self.instance.owner = user
+        self.instance.is_public = public
+        self.fields['tracks'].queryset = (
+            Track.objects.filter(artist__user=user) if public else Track.objects.visible_to(user)
+        ).select_related('artist__user')
+        self.fields['tracks'].label = 'Треки релиза' if public else 'Добавить треки'
+        if not public:
+            self.fields.pop('release_type')
+            self.fields.pop('release_year')
+        else:
+            self.fields['release_year'].min_value = 1900
+            self.fields['release_year'].max_value = timezone.localdate().year + 1
 
-            fav_album = Album.objects.filter(owner=user, is_favorite_folder=True).first()
-            
-            favorite_tracks_ids = fav_album.tracks.values_list('id', flat=True) if fav_album else []
 
-            self.fields['tracks'].queryset = Track.objects.filter(
-                Q(artist__user=user) | Q(id__in=favorite_tracks_ids)
-            ).distinct()
-
-
-class DonationForm(forms.Form):
+class PaymentForm(StyledFormMixin, forms.Form):
     amount = forms.DecimalField(
         min_value=Decimal('0.01'),
         max_value=Decimal('100000.00'),
         max_digits=10,
         decimal_places=2,
-        label='Сумма',
-        widget=forms.TextInput(attrs={'inputmode': 'decimal', 'placeholder': 'Например, 5.00'}),
+        label='Сумма, демо USD',
+        widget=forms.NumberInput(attrs={'step': '0.01', 'inputmode': 'decimal', 'placeholder': '5.00'})
     )
+    token = forms.CharField(widget=forms.HiddenInput)
 
 
-class WalletTopUpForm(forms.Form):
+class BalanceAdjustmentForm(StyledFormMixin, forms.Form):
     amount = forms.DecimalField(
-        min_value=Decimal('0.01'),
-        max_value=Decimal('100000.00'),
         max_digits=10,
         decimal_places=2,
-        label='Сумма пополнения',
-        widget=forms.TextInput(attrs={'inputmode': 'decimal', 'placeholder': 'Например, 100.00'}),
+        min_value=Decimal('-100000'),
+        max_value=Decimal('100000'),
+        label='Изменение баланса, демо USD',
+        widget=forms.NumberInput(attrs={'step': '0.01', 'placeholder': '+10.00 или -5.00'})
     )
+    note = forms.CharField(max_length=200, label='Причина')
+    token = forms.CharField(widget=forms.HiddenInput)
+
+
+class ReviewForm(StyledFormMixin, forms.Form):
+    decision = forms.ChoiceField(
+        choices=[('approved', 'Одобрить'), ('rejected', 'Отклонить'), ('hidden', 'Скрыть')]
+    )
+    note = forms.CharField(
+        required=False,
+        max_length=2000,
+        label='Комментарий',
+        widget=forms.Textarea(attrs={'rows': 2})
+    )
+
+    def clean(self):
+        data = super().clean()
+        if data.get('decision') in {'rejected', 'hidden'} and not data.get('note', '').strip():
+            self.add_error('note', 'Укажите причину решения.')
+        return data

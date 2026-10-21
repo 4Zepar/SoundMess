@@ -1,9 +1,35 @@
 {% extends 'base.html' %}
+
+{% block title %}
+Вход
+{% endblock %}
+
 {% block content %}
-<h2>Вход</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-</form>
+<section class="auth-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Рады снова видеть</p>
+            <h1>Твоя музыка ждёт</h1>
+            <p>Войди, чтобы вернуться к любимому.</p>
+        </div>
+    </div>
+    <div class="panel">
+        <form method="post">
+
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+            <div class="button-row"><button class="btn" type="submit">Войти</button></div>
+        </form>
+    </div>
+    <p class="form-footer">Ещё нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
+</section>
 {% endblock %}

@@ -1,17 +1,72 @@
 {% extends 'base.html' %}
 
+{% block title %}
+Поддержать {{ artist.user.username }}
+{% endblock %}
+
 {% block content %}
-<section class="form-card support-page">
-    <h1>Поддержать {{ artist.user.username }}</h1>
-    <div class="support-balance"><span>Доступно</span><strong>{{ wallet.balance_usd|floatformat:2 }} USD</strong><a href="{% url 'wallet_top_up' %}" class="secondary-action">Пополнить</a></div>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Отправить донат</button>
-    </form>
+<section class="form-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Спасибо за музыку</p>
+            <h1>Поддержать {{ artist.user.username }}</h1>
+            <p>Маленькое спасибо, которое помогает создавать новое.</p>
+        </div>
+    </div>
+    <div class="wallet-summary">
+        <div>
+            <p class="eyebrow">Твой демо-баланс</p><strong>{{ wallet.balance_usd|floatformat:2 }} <span
+                    class="muted">USD</span></strong>
+        </div><a class="btn btn-secondary" href="{% url 'wallet_top_up' %}">Пополнить</a>
+    </div>
+    <div class="panel">
+        <h2>
+            {% if confirmation %}
+            Подтверждение поддержки
+            {% else %}
+            Выбери сумму
+            {% endif %}
+        </h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% if confirmation %}
+            <p class="confirmation-amount">{{ confirmation_amount }} <span class="muted">USD</span></p>
+            <p class="muted">Эта сумма будет переведена {{ artist.user.username }} с твоего демонстрационного баланса.
+            </p>{{ form.amount.as_hidden }}<input type="hidden" name="confirm" value="yes">{{ form.token }}
+            {% else %}
+
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            {% endif %}
+
+            <div class="button-row"><button class="btn" type="submit">
+                    {% if confirmation %}
+                    Подтвердить
+                    поддержку
+                    {% else %}
+                    Продолжить
+                    {% endif %}
+                </button><a class="btn btn-ghost" href="{{ artist.get_absolute_url }}">Отмена</a></div>
+        </form>
+        <p class="demo-notice">Демонстрационная операция с виртуальными деньгами. Реальная оплата не производится.</p>
+    </div>
     {% if donations %}
-        <h2>Ваши последние донаты</h2>
-        {% for donation in donations %}<div class="support-history"><span>{{ donation.created_at|date:'d.m.Y H:i' }}</span><strong>{{ donation.amount_usd|floatformat:2 }} USD</strong></div>{% endfor %}
+    <div class="section-head">
+        <h2>Твоя поддержка</h2>
+    </div>
+    <div class="panel">
+        {% for donation in donations %}
+        <div class="transaction"><span>Поддержка
+                {{ artist.user.username }}<small>{{ donation.created_at|date:'d.m.Y H:i' }}</small></span><strong>{{ donation.amount_usd|floatformat:2 }}
+                USD</strong></div>
+        {% endfor %}
+    </div>
     {% endif %}
+
 </section>
 {% endblock %}

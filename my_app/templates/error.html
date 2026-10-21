@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ status }}
+{% endblock %}
+
+{% block content %}
+<section class="error-page">
+    <div class="error-code">{{ status }}</div>
+    <h1>
+        {% if status == 403 %}
+        Доступ ограничен
+        {% elif status == 404 %}
+        Кажется, здесь тишина
+        {% else %}
+        Что-то пошло не
+        так
+        {% endif %}
+    </h1>
+    <p>
+        {% if status == 403 %}
+        Для этой страницы нужны другие права доступа.
+        {% elif status == 404 %}
+        Страница не найдена
+        или материал пока не опубликован.
+        {% else %}
+        Не удалось загрузить страницу. Попробуйте ещё раз немного
+        позже.
+        {% endif %}
+    </p>
+    <div class="button-row"><a class="btn btn-secondary" href="{% url 'home' %}">Вернуться к музыке</a></div>
+</section>
+{% endblock %}

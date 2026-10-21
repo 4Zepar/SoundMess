@@ -1,0 +1,14 @@
+{% for entry in transactions %}
+<div class="transaction">
+    <span>{{ entry.description }}<small>{{ entry.created_at|date:'d.m.Y H:i' }} · Баланс:
+            {{ entry.balance_after_usd|floatformat:2 }} USD</small></span><strong
+        class="{% if entry.amount_cents > 0 %}amount-positive{% endif %}">
+        {% if entry.amount_cents > 0 %}
+        +
+        {% endif %}
+        {{ entry.amount_usd|floatformat:2 }}
+        USD</strong>
+</div>
+{% empty %}
+<p class="muted">Операций пока нет.</p>
+{% endfor %}

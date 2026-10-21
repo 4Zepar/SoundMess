@@ -1,12 +1,112 @@
 {% extends 'base.html' %}
+
+{% load music %}
+
+{% block title %}
+{{ account.username }} —
+аккаунт
+{% endblock %}
+
 {% block content %}
-<section class="moderation-page">
-    <a class="muted" href="{% url 'moderation_users' %}">← К пользователям</a>
-    <div class="user-detail-head"><span class="artist-avatar">{{ account.username|first|upper }}</span><div><p class="eyebrow">{% if account.artist %}Артист{% else %}Слушатель{% endif %}</p><h1>{{ account.username }}</h1><p class="muted">{{ account.email|default:'Email не указан' }}</p></div></div>
-    <section class="moderation-section"><h2>Баланс</h2><p class="balance-value">{{ wallet.balance_usd|floatformat:2 }} USD</p><form method="post" action="{% url 'adjust_user_balance' account.id %}" class="inline-form">{% csrf_token %}<input type="text" name="amount_usd" inputmode="decimal" placeholder="+10.00 или -5.00" required><button type="submit">Изменить баланс</button></form></section>
-    <section class="moderation-section"><h2>Альбомы</h2>{% for album in albums %}<div class="admin-item"><span><strong>{{ album.title }}</strong><small>{{ album.tracks.count }} треков</small></span>{% if not album.is_favorite_folder %}<form method="post" action="{% url 'delete_moderated_album' album.id %}">{% csrf_token %}<button class="danger-button" type="submit">Удалить</button></form>{% endif %}</div>{% empty %}<p class="muted">Нет альбомов.</p>{% endfor %}</section>
-    <section class="moderation-section"><h2>Треки</h2>{% for track in tracks %}<div class="admin-item"><span><strong>{{ track.title }}</strong><small>{{ track.plays_count }} прослушиваний</small></span><form method="post" action="{% url 'delete_moderated_track' track.id %}">{% csrf_token %}<button class="danger-button" type="submit">Удалить</button></form></div>{% empty %}<p class="muted">Нет треков.</p>{% endfor %}</section>
-    <section class="moderation-section"><h2>Подписки</h2>{% for follow in follows %}<p class="muted">{{ follow.artist.user.username }}</p>{% empty %}<p class="muted">Подписок нет.</p>{% endfor %}</section>
-    <section class="moderation-section"><h2>Комментарии</h2>{% for comment in comments %}<div class="admin-comment-item">{% if comment.author.profile.avatar %}<img src="{{ comment.author.profile.avatar.url }}" class="admin-comment-avatar" alt="">{% else %}<span class="admin-comment-avatar admin-comment-placeholder"></span>{% endif %}{% if comment.track.cover %}<img src="{{ comment.track.cover.url }}" class="admin-comment-cover" alt="">{% else %}<span class="admin-comment-cover admin-comment-placeholder"></span>{% endif %}<span><strong>{{ comment.track.title }}</strong><small>{{ comment.track.artist.user.username }} · {{ comment.timestamp_seconds }} сек.</small><small>{{ comment.text }}</small></span><form method="post" action="{% url 'delete_moderated_comment' comment.id %}">{% csrf_token %}<button class="danger-button" type="submit">Удалить</button></form></div>{% empty %}<p class="muted">Комментариев нет.</p>{% endfor %}</section>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Администрирование / Пользователи</p>
+        <h1>{{ account.username }}</h1>
+        <p>{{ account.email|default:'Email не указан' }} · {{ account.profile.get_role_display }} ·
+
+            {% if account.is_active %}
+            Активен
+            {% else %}
+            Заблокирован
+            {% endif %}
+        </p>
+    </div><a class="btn btn-ghost" href="{% url 'moderation_users' %}">Все пользователи</a>
+</div>
+{% include 'moderation/nav.html' %}
+
+<div class="wallet-layout">
+    <section class="panel">
+        <h2>Права доступа</h2>
+        {% if account != user and not account.is_superuser %}
+        <form method="post" action="{% url 'moderation_update_user' account.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="role">
+            <div class="form-field"><label for="account-role">Уровень доступа</label><select name="role"
+                    id="account-role">
+                    <option value="member" {% if account_role == 'member' %}selected{% endif %}>Пользователь</option>
+                    <option value="moderator" {% if account_role == 'moderator' %}selected{% endif %}>Модератор</option>
+                    <option value="administrator" {% if account_role == 'administrator' %}selected{% endif %}>
+                        Администратор</option>
+                </select></div>
+            <div class="button-row"><button class="btn btn-secondary">Сохранить права</button></div>
+        </form>
+        <form method="post" action="{% url 'moderation_update_user' account.id %}"
+            data-confirm="Изменить доступ пользователя {{ account.username }}?">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="active"><input type="hidden" name="active"
+                value="{{ account.is_active|yesno:'false,true' }}">
+            <div class="button-row"><button
+                    class="btn {% if account.is_active %}btn-danger{% else %}btn-secondary{% endif %}">
+                    {% if account.is_active %}
+                    Заблокировать
+                    аккаунт
+                    {% else %}
+                    Разблокировать аккаунт
+                    {% endif %}
+                </button></div>
+        </form>
+        {% else %}
+        <p class="muted">Изменение прав и блокировка этого аккаунта ограничены.</p>
+        {% endif %}
+
+    </section>
+    <section class="panel">
+        <h2>Демо-баланс: {{ wallet.balance_usd|floatformat:2 }} USD</h2>
+        <form method="post" action="{% url 'adjust_user_balance' account.id %}">
+
+            {% csrf_token %}
+
+            {% for field in adjustment_form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+            <div class="button-row"><button class="btn btn-secondary">Изменить баланс</button></div>
+        </form>
+    </section>
+</div>
+<div class="section-head">
+    <h2>Операции кошелька</h2>
+</div>
+<section class="panel">
+    {% include 'includes/transactions.html' %}
 </section>
+<div class="section-head">
+    <h2>Треки пользователя</h2>
+</div>
+{% if tracks %}
+<div class="track-list">
+
+    {% for track in tracks %}
+
+    {% include 'includes/track_item.html' %}
+
+    {% endfor %}
+</div>
+{% else %}
+<p class="muted">Треков
+    пока нет.</p>
+{% endif %}
+
+<div class="section-head">
+    <h2>Релизы</h2>
+</div>
+{% for album in albums %}
+<a class="management-row" href="{{ album.get_absolute_url }}"><strong>{{ album.title }}</strong>
+    {% include 'includes/status.html' with item=album %}
+    <span class="muted">Открыть →</span></a>
+{% empty %}
+<p class="muted">Релизов пока нет.</p>
+{% endfor %}
+
 {% endblock %}
