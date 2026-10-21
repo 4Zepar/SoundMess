@@ -4,12 +4,13 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Exists, Max, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from pc_store.forms import BalanceAdjustmentForm, ReviewForm
+from pc_store.forms import BalanceAdjustmentForm, ModerationCommentFilterForm, ReviewForm
 from pc_store.models import Album, Artist, Comment, ModerationAction, Track
 from pc_store.permissions import administrator_required, moderator_required
 from pc_store.selectors import track_cards
@@ -127,9 +128,63 @@ def review_material(request, kind, object_id):
 
 @moderator_required
 def comments(request):
-    query = Comment.objects.select_related('author', 'track__artist__user').order_by('-created_at')
+    form = ModerationCommentFilterForm(request.GET)
+    albums = Album.objects.filter(
+        tracks=OuterRef('pk'), owner_id=OuterRef('artist__user_id'),
+        is_public=True, is_favorite_folder=False,
+    ).exclude(release_type='single')
+    tracks = Track.objects.select_related('artist__user').annotate(
+        comment_count=Count('comments', distinct=True),
+        hidden_comment_count=Count('comments', filter=Q(comments__is_hidden=True), distinct=True),
+        last_comment_at=Max('comments__created_at'),
+        has_album=Exists(albums),
+    ).filter(comment_count__gt=0)
+    if form.is_valid():
+        data = form.cleaned_data
+        if data['q']:
+            tracks = tracks.filter(
+                Q(title__icontains=data['q']) | Q(artist__user__username__icontains=data['q']),
+            )
+        if data['artist']:
+            tracks = tracks.filter(artist=data['artist'])
+        if data['release_kind']:
+            tracks = tracks.filter(has_album=data['release_kind'] == 'album')
+    else:
+        tracks = tracks.none()
+    page = Paginator(tracks.order_by('-last_comment_at', '-pk'), 24).get_page(request.GET.get('page'))
+    detail_query = request.GET.copy()
+    detail_query.pop('page', None)
+    detail_query['list_page'] = page.number
+    return render(request, 'moderation/comments.html', {
+        'filter_form': form, 'tracks': page.object_list, 'page_obj': page,
+        'detail_query': detail_query.urlencode(),
+    })
+
+
+@moderator_required
+def track_comments(request, track_id):
+    track = get_object_or_404(track_cards(request.user, Track.objects.all()), pk=track_id)
+    query = track.comments.select_related(
+        'author', 'parent__author', 'parent__parent__parent',
+    ).order_by('-created_at', '-pk')
     page = Paginator(query, 30).get_page(request.GET.get('page'))
-    return render(request, 'moderation/comments.html', {'comments': page.object_list, 'page_obj': page})
+    for comment in page.object_list:
+        comment.hidden_by_parent = False
+        ancestor = comment.parent
+        while ancestor:
+            if ancestor.is_hidden:
+                comment.hidden_by_parent = True
+                break
+            ancestor = ancestor.parent
+    back_query = request.GET.copy()
+    list_page = back_query.pop('list_page', None)
+    back_query.pop('page', None)
+    if list_page:
+        back_query['page'] = list_page[-1]
+    return render(request, 'moderation/track_comments.html', {
+        'track': track, 'comments': page.object_list, 'page_obj': page,
+        'comment_count': page.paginator.count, 'back_query': back_query.urlencode(),
+    })
 
 
 @moderator_required
@@ -147,7 +202,10 @@ def comment_visibility(request, comment_id):
             action='hidden' if hidden else 'restored'
         )
     messages.success(request, 'Видимость комментария изменена.')
-    return redirect('moderation_comments')
+    destination = reverse('moderation_track_comments', args=[comment.track_id])
+    if request.GET:
+        destination += '?' + request.GET.urlencode()
+    return redirect(destination)
 
 
 @administrator_required
@@ -238,7 +296,8 @@ def update_user(request, user_id):
                 )
             account.is_staff = role != 'member'
             account.save(update_fields=['is_staff'])
-            note = f'Права доступа: {role}'
+            labels = {'member': 'Пользователь', 'moderator': 'Модератор', 'administrator': 'Администратор'}
+            note = f'Уровень доступа сохранён: {labels[role]}.'
         else:
             messages.error(request, 'Некорректное действие.')
             return redirect('moderation_user_detail', user_id=account.pk)

@@ -38,7 +38,9 @@
                     <option value="administrator" {% if account_role == 'administrator' %}selected{% endif %}>
                         Администратор</option>
                 </select></div>
-            <div class="button-row"><button class="btn btn-secondary">Сохранить права</button></div>
+            <p class="helptext">Модератор проверяет заявки, публикации и комментарии. Администратор также управляет
+                пользователями и балансами. Статус артиста подтверждается отдельно через заявку.</p>
+            <div class="button-row"><button class="btn btn-secondary" type="submit">Сохранить права</button></div>
         </form>
         <form method="post" action="{% url 'moderation_update_user' account.id %}"
             data-confirm="Изменить доступ пользователя {{ account.username }}?">
@@ -56,7 +58,7 @@
                 </button></div>
         </form>
         {% else %}
-        <p class="muted">Изменение прав и блокировка этого аккаунта ограничены.</p>
+        <p class="muted">Собственные права и доступ суперпользователя здесь менять нельзя.</p>
         {% endif %}
 
     </section>

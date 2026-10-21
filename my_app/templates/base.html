@@ -214,19 +214,21 @@
                 <button class="icon-button" id="player-next" aria-label="Следующий трек" disabled>
                     {% include 'includes/icon.html' with name='next' %}
                 </button>
-                <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
-                    title="Повторять текущий трек" aria-pressed="false">
-                    {% include 'includes/icon.html' with name='repeat' %}
-                </button>
             </div>
             <div class="player-timeline"><span id="current-time">0:00</span><input id="progress-bar" type="range"
                     min="0" max="0" value="0" step="0.1" disabled aria-label="Позиция воспроизведения"><span
                     id="total-time">0:00</span></div>
         </div>
-        <div class="player-volume"><button class="icon-button" id="player-mute" aria-label="Выключить звук">
+        <div class="player-tools">
+            <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
+                title="Повторять текущий трек" aria-pressed="false">
+                {% include 'includes/icon.html' with name='repeat' %}
+            </button>
+            <div class="player-volume"><button class="icon-button" id="player-mute" aria-label="Выключить звук">
                 {% include 'includes/icon.html' with name='volume' %}
             </button><input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8"
                 aria-label="Громкость"></div>
+        </div>
     </section>
     <dialog id="confirm-dialog" aria-labelledby="confirm-title">
         <h2 id="confirm-title">Подтвердите действие</h2>

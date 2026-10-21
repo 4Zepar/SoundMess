@@ -7,7 +7,7 @@
         href="{% url 'moderation_tracks' %}">Треки</a><a
         class="tab {% if request.resolver_match.url_name == 'moderation_albums' %}is-active{% endif %}"
         href="{% url 'moderation_albums' %}">Релизы</a><a
-        class="tab {% if request.resolver_match.url_name == 'moderation_comments' %}is-active{% endif %}"
+        class="tab {% if request.resolver_match.url_name == 'moderation_comments' or request.resolver_match.url_name == 'moderation_track_comments' %}is-active{% endif %}"
         href="{% url 'moderation_comments' %}">Комментарии</a>
     {% if can_manage_users %}
     <a class="tab {% if request.resolver_match.url_name == 'moderation_users' %}is-active{% endif %}"

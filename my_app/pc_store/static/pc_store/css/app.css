@@ -1577,6 +1577,67 @@ input[type=file]::file-selector-button {
     margin-top: 0;
 }
 
+.comment-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.comment-filters .form-field {
+    margin-top: 0;
+}
+
+.comment-filters .button-row {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+.comment-track-list {
+    display: grid;
+    gap: 10px;
+}
+
+.comment-guidance {
+    margin-bottom: 20px;
+}
+
+.comment-track-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto 20px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid rgb(255 255 255 / 5%);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 3%);
+}
+
+.comment-track-card:hover,
+.comment-track-card:focus-visible {
+    background: rgb(255 255 255 / 6%);
+    border-color: rgb(255 255 255 / 10%);
+}
+
+.comment-track-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: right;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.comment-track-stats small {
+    color: var(--muted);
+}
+
+.comment-track-card>.icon {
+    transform: rotate(-90deg);
+    color: var(--muted);
+}
+
 .user-row {
     display: flex;
     gap: 14px;
@@ -1826,6 +1887,13 @@ input[type=file]::file-selector-button {
     margin: 0;
 }
 
+.player-tools {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 20px;
+}
+
 .player-volume {
     display: flex;
     align-items: center;
@@ -2057,7 +2125,7 @@ html.is-navigating::before {
     }
 
     .player {
-        grid-template-columns: 1fr 1.3fr;
+        grid-template-columns: minmax(0, 1fr) minmax(220px, 1.3fr) minmax(0, 1fr);
         gap: 18px;
         padding-inline: 18px;
     }
@@ -2292,6 +2360,25 @@ html.is-navigating::before {
         padding: 18px 14px;
     }
 
+    .comment-filters {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .comment-track-card {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .comment-track-stats {
+        font-size: 11px;
+    }
+
+    .comment-track-card>.icon {
+        display: none;
+    }
+
     .review-head {
         align-items: flex-start;
     }
@@ -2362,7 +2449,7 @@ html.is-navigating::before {
     .player {
         bottom: calc(58px + env(safe-area-inset-bottom));
         padding: 10px 14px;
-        grid-template-columns: minmax(0, 1fr) 118px;
+        grid-template-columns: minmax(0, 1fr) 76px 28px;
         gap: 10px;
         height: 74px;
     }
@@ -2388,6 +2475,15 @@ html.is-navigating::before {
         gap: 4px;
         margin: 0;
         justify-content: flex-end;
+    }
+
+    .player-tools {
+        gap: 0;
+    }
+
+    .player-tools .icon-button {
+        width: 28px;
+        height: 40px;
     }
 
     .player-controls .player-prev {

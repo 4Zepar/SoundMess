@@ -162,6 +162,26 @@ class TrackFilterForm(StyledFormMixin, forms.Form):
         return data
 
 
+class ModerationCommentFilterForm(StyledFormMixin, forms.Form):
+    q = forms.CharField(
+        required=False, max_length=200, label='Поиск песни',
+        widget=forms.TextInput(attrs={'type': 'search', 'placeholder': 'Название или артист'}),
+    )
+    release_kind = forms.ChoiceField(
+        required=False, label='Принадлежность к релизу',
+        choices=[('', 'Все песни'), ('single', 'Синглы / отдельные треки'), ('album', 'Треки из альбомов / EP')],
+    )
+    artist = forms.ModelChoiceField(
+        required=False, label='Артист', empty_label='Все артисты', queryset=Artist.objects.none(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['artist'].queryset = Artist.objects.filter(
+            tracks__comments__isnull=False,
+        ).select_related('user').order_by('user__username').distinct()
+
+
 class AlbumForm(StyledFormMixin, forms.ModelForm):
     cover = forms.ImageField(required=False, validators=[validate_cover_upload], label='Обложка')
 

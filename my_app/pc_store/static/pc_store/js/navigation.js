@@ -92,8 +92,8 @@ export class Navigation {
         if (form.dataset.submitting === 'true') return;
         if (form.dataset.confirm && !await confirmAction(form.dataset.confirm)) return;
         const data = new FormData(form, event.submitter);
-        const method = (form.method || 'GET').toUpperCase();
-        const target = new URL(form.action || location.href, location.href);
+        const method = (form.getAttribute('method') || 'GET').toUpperCase();
+        const target = new URL(form.getAttribute('action') || location.href, location.href);
         if (method === 'GET') {
             target.search = '';
             for (const [key, value] of data) if (typeof value === 'string' && value.trim()) target.searchParams.append(key, value);

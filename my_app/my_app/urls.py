@@ -71,6 +71,7 @@ urlpatterns = [
         name='review_album'
     ),
     path('moderation/comments/', moderation.comments, name='moderation_comments'),
+    path('moderation/comments/track/<int:track_id>/', moderation.track_comments, name='moderation_track_comments'),
     path(
         'moderation/comments/<int:comment_id>/toggle/',
         moderation.comment_visibility,
