@@ -1,25 +1,61 @@
 {% extends 'base.html' %}
 
+{% block title %}
+Заявки артистов
+{% endblock %}
+
 {% block content %}
-<section class="moderation-page">
-    <p class="eyebrow">Moderation queue</p>
-    <h1>Заявки артистов</h1>
-    {% for application in applications %}
-        <article class="moderation-application">
-            <div>
-                <h2>{{ application.user.username }}</h2>
-                <p class="muted">{{ application.bio|default:'Описание не указано.' }}</p>
-                <small class="muted">{{ application.user.date_joined|date:'d.m.Y H:i' }}</small>
-            </div>
-            <form method="post" action="{% url 'review_artist_application' application.id %}">
-                {% csrf_token %}
-                <input type="text" name="note" placeholder="Комментарий модератора">
-                <button type="submit" name="decision" value="approved">Одобрить</button>
-                <button type="submit" name="decision" value="rejected" class="danger-button">Отклонить</button>
-            </form>
-        </article>
-    {% empty %}
-        <p class="muted">Новых заявок нет.</p>
-    {% endfor %}
-</section>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Модерация</p>
+        <h1>Заявки артистов</h1>
+        <p>Познакомьтесь с артистом перед открытием публикаций.</p>
+    </div>
+</div>
+{% include 'moderation/nav.html' %}
+
+<nav class="tabs" aria-label="Статус заявок"><a class="tab {% if status == 'pending' %}is-active{% endif %}"
+        href="?status=pending">На проверке</a><a class="tab {% if status == 'approved' %}is-active{% endif %}"
+        href="?status=approved">Одобренные</a><a class="tab {% if status == 'rejected' %}is-active{% endif %}"
+        href="?status=rejected">Отклонённые</a></nav>
+
+{% for application in applications %}
+<article class="review-item">
+    <div class="review-head">
+        <div>
+            <h2>{{ application.user.username }}</h2>
+            <p>Аккаунт создан {{ application.user.date_joined|date:'d.m.Y' }}</p>
+        </div>
+        {% include 'includes/status.html' with item=application %}
+
+    </div>
+    <p class="review-description">{{ application.bio|default:'Описание ещё не добавлено.' }}</p>
+
+    {% if application.moderation_note %}
+    <p class="alert alert-info">{{ application.moderation_note }}</p>
+
+    {% endif %}
+
+    {% if application.moderation_status == 'pending' %}
+    <form class="review-controls" method="post" action="{% url 'review_artist_application' application.id %}">
+        {% csrf_token %}
+        <label class="sr-only" for="note-{{ application.id }}">Причина решения</label><textarea
+            id="note-{{ application.id }}" name="note" rows="2" maxlength="2000"
+            placeholder="Причина отклонения или комментарий артисту"></textarea>
+        <div class="button-row"><button class="btn" name="decision" value="approved">Одобрить</button><button
+                class="btn btn-danger" name="decision" value="rejected">Отклонить</button></div>
+    </form>
+    {% endif %}
+
+</article>
+{% empty %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='check' %}
+    <h2>Очередь пуста</h2>
+    <p>Заявок с выбранным статусом нет.</p>
+</div>
+{% endfor %}
+
+{% include 'includes/pagination.html' %}
+
 {% endblock %}

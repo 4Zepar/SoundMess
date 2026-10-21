@@ -1,21 +1,54 @@
 {% extends 'base.html' %}
 
+{% block title %}
+Модерация комментариев
+{% endblock %}
+
 {% block content %}
-<section class="moderation-page">
-    <p class="eyebrow">Moderation queue</p>
-    <h1>Комментарии</h1>
-    {% for comment in comments %}
-        <article class="moderation-application">
-            <div>
-                <strong>{{ comment.author.username }}</strong>
-                <span class="muted">к {{ comment.track.title }} · {{ comment.timestamp_seconds }} сек.</span>
-                <p class="{% if comment.is_hidden %}muted{% endif %}">{{ comment.text }}</p>
-            </div>
-            <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}">
-                {% csrf_token %}
-                <button type="submit">{% if comment.is_hidden %}Восстановить{% else %}Скрыть{% endif %}</button>
-            </form>
-        </article>
-    {% empty %}<p class="muted">Комментариев пока нет.</p>{% endfor %}
-</section>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Модерация</p>
+        <h1>Комментарии</h1>
+        <p>Скрытый комментарий вместе с ответами исчезает из публичного обсуждения.</p>
+    </div>
+</div>
+{% include 'moderation/nav.html' %}
+
+{% for comment in comments %}
+<article class="review-item">
+    <div class="review-head">
+        <div>
+            <h3>{{ comment.author.username }}</h3>
+            <p><a href="{{ comment.track.get_absolute_url }}">{{ comment.track.title }}</a> ·
+                {{ comment.created_at|date:'d.m.Y H:i' }}
+            </p>
+        </div><span class="badge {% if comment.is_hidden %}badge-hidden{% else %}badge-approved{% endif %}">
+            {% if comment.is_hidden %}
+            Скрыт
+            {% else %}
+            Виден
+            {% endif %}
+        </span>
+    </div>
+    <p class="review-description">{{ comment.text }}</p>
+    <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="hidden" value="{{ comment.is_hidden|yesno:'false,true' }}"><button
+            class="btn btn-secondary">
+            {% if comment.is_hidden %}
+            Восстановить
+            {% else %}
+            Скрыть
+            {% endif %}
+        </button>
+    </form>
+</article>
+{% empty %}
+<div class="empty-state">
+    <h2>Комментариев пока нет</h2>
+</div>
+{% endfor %}
+
+{% include 'includes/pagination.html' %}
+
 {% endblock %}

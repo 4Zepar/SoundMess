@@ -1,11 +1,71 @@
 {% extends 'base.html' %}
+
+{% block title %}
+Демо-кошелёк
+{% endblock %}
+
 {% block content %}
-<section class="form-card wallet-page">
-    <p class="eyebrow">Баланс</p><h1>Пополнить баланс</h1>
-    <p class="muted">Текущий баланс: <strong>{{ wallet.balance_usd|floatformat:2 }} USD</strong></p>
-    <form method="post">
-        {% csrf_token %}{{ form.as_p }}
-        <button type="submit">Пополнить баланс</button>
-    </form>
-</section>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Поддерживай любимое</p>
+        <h1>Демо-кошелёк</h1>
+        <p>Виртуальный баланс для поддержки артистов.</p>
+    </div>
+</div>
+<div class="wallet-summary">
+    <div>
+        <p class="eyebrow">Доступный баланс</p><strong>{{ wallet.balance_usd|floatformat:2 }} <span
+                class="muted">USD</span></strong>
+    </div>
+    {% include 'includes/icon.html' with name='wallet' %}
+
+</div>
+<div class="wallet-layout">
+    <section class="panel">
+        <h2>
+            {% if confirmation %}
+            Подтвердить пополнение
+            {% else %}
+            Пополнить баланс
+            {% endif %}
+        </h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% if confirmation %}
+            <p class="muted">На
+                демонстрационный баланс будет зачислено</p>
+            <p class="confirmation-amount">{{ confirmation_amount }} <span class="muted">USD</span></p>
+            {{ form.amount.as_hidden }}<input type="hidden" name="confirm" value="yes">{{ form.token }}
+            {% else %}
+
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            {% endif %}
+
+            <div class="button-row"><button class="btn" type="submit">
+                    {% if confirmation %}
+                    Подтвердить
+                    пополнение
+                    {% else %}
+                    Продолжить
+                    {% endif %}
+                </button>
+                {% if confirmation %}
+                <a class="btn btn-ghost" href="{% url 'wallet_top_up' %}">Отмена</a>
+                {% endif %}
+            </div>
+        </form>
+        <p class="demo-notice">Это учебная демонстрация оплаты. Реальные деньги не списываются и не зачисляются.</p>
+    </section>
+    <section class="panel">
+        <h2>История операций</h2>
+        {% include 'includes/transactions.html' %}
+
+    </section>
+</div>
 {% endblock %}

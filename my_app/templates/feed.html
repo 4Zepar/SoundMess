@@ -1,19 +1,64 @@
 {% extends 'base.html' %}
 
+{% load music %}
+
+{% block title %}
+Мои подписки
+{% endblock %}
+
 {% block content %}
-<section class="feed-page">
-    <h1>Мои подписки</h1>
-    <p class="muted">Новые публичные релизы артистов, на которых вы подписаны.</p>
-    {% for release in releases %}
-        <article class="release-row">
-            <div>
-                <p class="eyebrow">{{ release.owner.username }}</p>
-                <h2><a href="{% url 'album_detail' release.id %}">{{ release.title }}</a></h2>
-                <span class="muted">{{ release.created_at|date:'d.m.Y' }} · {{ release.tracks.count }} треков</span>
-            </div>
-        </article>
-    {% empty %}
-        <p class="muted">Подпишитесь на артиста, чтобы видеть его новые релизы.</p>
-    {% endfor %}
-</section>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Музыка от тех, кто нравится</p>
+        <h1>Мои подписки</h1>
+        <p>Новые синглы и релизы любимых артистов.</p>
+    </div><a class="btn btn-ghost" href="{% url 'artist_list' %}">Найти артистов</a>
+</div>
+
+{% for entry in entries %}
+<article class="feed-entry">
+    <p class="feed-label"><span>
+            {% if entry.kind == 'album' %}
+            Новый релиз
+            {% else %}
+            Новый
+            сингл
+            {% endif %}
+        </span><time>{{ entry.date|date:'d.m.Y' }}</time></p>
+    {% if entry.kind == 'album' %}
+    <a class="feed-album" href="{{ entry.item.get_absolute_url }}">
+        {% with cover=entry.item.cover|image_url %}
+
+        {% if cover %}
+        <img src="{{ cover }}" alt="" loading="lazy">
+        {% else %}
+        <span class="art-placeholder">
+            {% include 'includes/icon.html' with name='disc' %}
+        </span>
+        {% endif %}
+
+        {% endwith %}
+        <span>
+            <h2>{{ entry.item.title }}</h2><span class="muted">{{ entry.item.owner.username }} ·
+                {{ entry.item.get_release_type_display }}</span>
+        </span></a>
+    {% else %}
+
+    {% include 'includes/track_item.html' with track=entry.item %}
+
+    {% endif %}
+
+</article>
+{% empty %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='feed' %}
+    <h2>Свежая музыка будет
+        здесь</h2>
+    <p>Подпишись на артистов, чтобы следить за их новыми релизами.</p><a class="btn btn-secondary"
+        href="{% url 'artist_list' %}">Открыть артистов</a>
+</div>
+{% endfor %}
+
+{% include 'includes/pagination.html' %}
+
 {% endblock %}

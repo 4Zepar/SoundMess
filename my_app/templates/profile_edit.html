@@ -1,10 +1,49 @@
 {% extends 'base.html' %}
+
+{% load music %}
+
+{% block title %}
+Настройки профиля
+{% endblock %}
+
 {% block content %}
-<section class="form-card">
-    <p class="eyebrow">Профиль</p><h1>Настроить профиль</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}{{ form.as_p }}
-        <button type="submit">Сохранить</button>
-    </form>
+<section class="form-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Твой аккаунт</p>
+            <h1>Настройки профиля</h1>
+            <p>Расскажи о себе и добавь фотографию.</p>
+        </div>
+    </div>
+    <div class="panel">
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            <div class="upload-preview" data-preview-for="id_avatar">
+
+                {% with avatar=user.profile.avatar|image_url %}
+
+                {% if avatar %}
+                <img src="{{ avatar }}" alt="Текущий аватар">
+                {% else %}
+                <span class="art-placeholder">
+                    {% include 'includes/icon.html' with name='users' %}
+                </span>
+                {% endif %}
+
+                {% endwith %}
+
+            </div>
+            <div class="button-row"><button class="btn">Сохранить</button><a class="btn btn-ghost"
+                    href="{% url 'profile' %}">Отмена</a></div>
+        </form>
+    </div>
 </section>
 {% endblock %}

@@ -1,5 +1,16 @@
 from django.contrib import admin
-from .models import Album, Artist, Comment, Donation, Follow, Profile, Track, Wallet
+from .models import Album, Artist, Comment, Donation, Follow, ModerationAction, Profile, Track, Wallet, WalletTransaction
+
+
+class ReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
@@ -19,9 +30,9 @@ class ArtistAdmin(admin.ModelAdmin):
 
 @admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
-    list_display = ['title', 'artist', 'source_provider', 'release_type', 'plays_count', 'is_explicit']
-    list_filter = ['genre', 'release_type', 'source_provider', 'is_explicit']
-    search_fields = ['title', 'artist__user__username', 'source_id']
+    list_display = ['title', 'artist', 'release_type', 'plays_count', 'is_explicit']
+    list_filter = ['genre', 'release_type', 'is_explicit']
+    search_fields = ['title', 'artist__user__username']
 
 
 @admin.register(Follow)
@@ -39,13 +50,25 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Wallet)
-class WalletAdmin(admin.ModelAdmin):
+class WalletAdmin(ReadOnlyAdmin):
     list_display = ['user', 'balance_cents', 'updated_at']
     search_fields = ['user__username']
 
 
 @admin.register(Donation)
-class DonationAdmin(admin.ModelAdmin):
+class DonationAdmin(ReadOnlyAdmin):
     list_display = ['donor', 'artist', 'amount_cents', 'status', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['donor__username', 'artist__user__username', 'idempotency_key']
+
+
+@admin.register(WalletTransaction)
+class WalletTransactionAdmin(ReadOnlyAdmin):
+    list_display = ['wallet', 'amount_cents', 'balance_after_cents', 'created_at']
+    search_fields = ['wallet__user__username', 'operation_key']
+
+
+@admin.register(ModerationAction)
+class ModerationActionAdmin(ReadOnlyAdmin):
+    list_display = ['actor', 'target_type', 'target_id', 'action', 'created_at']
+    list_filter = ['target_type', 'action']

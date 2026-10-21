@@ -1,504 +1,245 @@
-<!DOCTYPE html>
+{% load static music %}
+
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundMess</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #131313;
-            --card-bg: #1a1a1a;
-            --accent-color: #ff5000;
-            --text-main: #ffffff;
-            --text-dim: #b3b3b3;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --hover-white: rgba(255, 255, 255, 0.05);
-        }
-
-        * { box-sizing: border-box; }
-
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background: var(--bg-color); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding-bottom: 112px;
-            min-height: 100vh;
-        }
-
-        a { text-decoration: none; color: inherit; transition: 0.2s; }
-        
-        /* Шапка */
-        header { 
-            background: rgba(14, 14, 14, 0.8); 
-            backdrop-filter: blur(10px);
-            width: min(1200px, calc(100% - 48px));
-            margin: 16px auto;
-            border-radius: 15px;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-bottom: 1px solid var(--border-color); 
-            position: sticky; top: 0; z-index: 1001;
-            height: 64px;
-        }
-
-        .logo { font-size: 20px; font-weight: 800; color: var(--accent-color); letter-spacing: 1px; }
-        .nav-links { display: flex; gap: 18px; align-items: center; font-size: 14px; font-weight: 500; }
-        .nav-links a { color: var(--text-dim); }
-        .nav-links a:hover, .nav-links a:focus-visible { color: var(--text-main); }
-        .nav-links .nav-primary { color: var(--text-main); }
-
-        /* Контейнер контента */
-        main { 
-            width: min(1200px, calc(100% - 48px));
-            padding: 28px 0 44px;
-            margin: 0 auto;
-        }
-
-        /* Твои стили для лайков и состояний (не менял логику) */
-        .heart-icon { fill: none; stroke: #b3b3b3; stroke-width: 2; transition: 0.2s; }
-        .heart-icon.is-liked { fill: var(--accent-color); stroke: var(--accent-color); }
-        .track-row.is-playing .track-title { color: var(--accent-color); }
-
-        /* Панель плеера (контейнер) */
-        .player-bar { 
-            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
-            width: min(1200px, calc(100% - 24px));
-            background: #1c1c1c; 
-            padding: 10px 18px;
-            border-radius: 15px;
-            display: flex; align-items: center; 
-            border-top: 1px solid var(--border-color); 
-            z-index: 1000; min-height: 76px;
-        }
-        .player-bar.is-empty .player-info,
-        .player-bar.is-empty .player-progress,
-        .player-bar.is-empty .player-volume,
-        .player-bar.is-empty .player-extra { display: none; }
-        .player-bar.is-empty { justify-content: center; opacity: .72; }
-        .player-empty-label { color: var(--text-dim); font-size: 13px; }
-        .player-info { width: 230px; display: flex; align-items: center; gap: 10px; margin-left: 18px; min-width: 0; }
-        .player-cover { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; background: #282828; flex: 0 0 auto; }
-        .player-progress { flex: 1; display: flex; align-items: center; gap: 10px; margin: 0 24px; min-width: 0; }
-        .player-volume { display: flex; align-items: center; gap: 10px; }
-        .player-extra { display: flex; align-items: center; gap: 14px; color: var(--text-dim); }
-
-        .btn-play-main { 
-            background: var(--accent-color); color: white; 
-            width: 42px; height: 42px; border-radius: 50%; border: none;
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; transition: 0.2s;
-        }
-
-        input[type=range] { accent-color: var(--accent-color); cursor: pointer; }
-
-        /* Формы (общий стиль) */
-        input[type="text"], input[type="password"], input[type="email"], input[type="number"], input[type="url"], input[type="file"], textarea, select {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
-        input[type="file"] { padding: 8px; }
-        input[type="file"]::file-selector-button { background: #333; color: white; border: 0; border-radius: 5px; padding: 8px 12px; margin-right: 10px; cursor: pointer; }
-        button[type="submit"] {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .muted { color: var(--text-dim); }
-        .eyebrow { color: var(--accent-color); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-        .artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
-        .artist-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
-        .artist-card:hover { border-color: var(--accent-color); transform: translateY(-2px); }
-        .artist-card span { color: var(--text-dim); font-size: 13px; }
-        .artist-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--accent-color); color: white; font-size: 26px; font-weight: 800; }
-        .artist-avatar-large { width: 120px; height: 120px; font-size: 48px; }
-        .artist-hero { display: flex; gap: 24px; align-items: center; margin-bottom: 40px; }
-        .artist-hero h1 { margin: 4px 0 8px; }
-        .artist-actions, .profile-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        .artist-albums { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin: 18px 0 36px; }
-        .artist-album-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .artist-album-card a { display: flex; flex-direction: column; gap: 8px; }
-        .artist-album-cover { aspect-ratio: 1; border-radius: 7px; background: #242424; display: grid; place-items: center; color: var(--accent-color); font-size: 42px; overflow: hidden; }
-        .artist-album-cover img { width: 100%; height: 100%; object-fit: cover; }
-        .secondary-action { color: var(--text-dim); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; background: transparent; cursor: pointer; display: inline-block; }
-        .secondary-action:hover { color: var(--text-main); border-color: var(--accent-color); }
-        .balance-card, .form-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; }
-        .balance-card { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
-        .balance-card strong, .balance-card span { display: block; }
-        .balance-card strong { font-size: 24px; margin: 5px 0; }
-        .form-card { width: min(720px, 100%); margin: 0 auto; }
-        #follow-button { background: var(--accent-color); color: white; border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer; font-weight: 600; }
-        .release-row { padding: 18px 0; border-bottom: 1px solid var(--border-color); }
-        .release-row h2 { margin: 4px 0; }
-        .moderation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
-        .moderation-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .moderation-card strong { color: var(--accent-color); font-size: 32px; }
-        .moderation-application { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--border-color); }
-        .moderation-application h2 { margin: 0 0 6px; }
-        .moderation-application form { min-width: min(100%, 360px); }
-        .danger-button { background: #a83232 !important; }
-        .dashboard-chart { height: 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin: 24px 0; }
-        .dashboard-action { background: var(--accent-color); color: white; padding: 10px 16px; border-radius: 6px; font-weight: 600; }
-        .dashboard-list { background: var(--card-bg); border-top: 1px solid var(--border-color); }
-        .dashboard-track { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border-color); }
-        .dashboard-track a { color: var(--accent-color); }
-        .form-page { max-width: 720px; margin: 0 auto; }
-        .support-balance { display: flex; align-items: center; gap: 14px; padding: 16px; background: #242424; border: 1px solid var(--border-color); border-radius: 8px; margin: 20px 0; }
-        .support-balance span { color: var(--text-dim); flex: 1; }
-        .support-balance strong { font-size: 20px; }
-        .support-history { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); color: var(--text-dim); }
-        .support-history strong { color: var(--text-main); }
-        .dashboard-table { overflow: hidden; border: 1px solid var(--border-color); border-radius: 8px; }
-        .dashboard-table .dashboard-track { padding: 15px 18px; background: var(--card-bg); }
-        .dashboard-table .dashboard-track:nth-child(even) { background: #202020; }
-        .track-rank { color: var(--accent-color); font-weight: 800; }
-        .user-directory { display: flex; flex-direction: column; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
-        .user-directory-row { display: grid; grid-template-columns: 42px 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
-        .user-directory-row:hover { background: #242424; }
-        .user-directory-row small, .admin-item small { display: block; color: var(--text-dim); margin-top: 4px; }
-        .user-avatar-small { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-color); font-weight: 800; }
-        .user-detail-head { display: flex; align-items: center; gap: 18px; padding: 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; margin: 24px 0; }
-        .moderation-section { padding: 22px 0; border-bottom: 1px solid var(--border-color); }
-        .moderation-section h2 { margin-top: 0; }
-        .balance-value { color: var(--accent-color); font-size: 24px; font-weight: 800; }
-        .inline-form { display: flex; gap: 10px; align-items: center; }
-        .inline-form input { margin: 0; max-width: 240px; }
-        .admin-item { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border-color); }
-        @media (max-width: 700px) {
-            header { padding: 0 16px; margin: 6px; }
-            .nav-links { gap: 10px; font-size: 12px; }
-            main { padding: 20px 16px; }
-            .artist-hero { align-items: flex-start; flex-direction: column; }
-            .artist-avatar-large { width: 88px; height: 88px; font-size: 34px; }
-            .moderation-application { align-items: stretch; flex-direction: column; }
-            .balance-card { align-items: stretch; flex-direction: column; }
-            .support-balance { align-items: stretch; flex-direction: column; }
-            .player-info { width: auto; flex: 1; }
-            .player-volume, .player-extra { display: none; }
-            .player-progress { margin: 0 8px; }
-            .player-cover { display: none; }
-            .user-directory-row { grid-template-columns: 36px 1fr; }
-            .user-directory-row > .muted { grid-column: 2; }
-            .inline-form { align-items: stretch; flex-direction: column; }
-            .inline-form input { max-width: none; }
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101010">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'pc_store/favicon.svg' %}">
+    <title>
+        {% block title %}
+        Музыка
+        {% endblock %}
+        · SoundMess</title>
+    <link rel="stylesheet" href="{% static 'pc_store/css/app.css' %}">
+    <script type="module" src="{% static 'pc_store/js/app.js' %}"></script>
 </head>
-<body>
+<body data-login-url="{% url 'login' %}">
+    <a class="skip-link" href="#main-content">К содержанию</a>
 
-<header>
-    <div class="logo">SOUNDMESS</div>
-    <nav class="nav-links">
-        <a href="{% url 'home' %}">Главная</a>
-        <a href="{% url 'artist_list' %}">Артисты</a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'profile' %}">Профиль</a>
-            <a href="{% url 'feed' %}">Мои подписки</a>
-            <a href="{% url 'logout' %}" style="opacity: 0.6;">Выход</a>
-        {% else %}
-            <a href="{% url 'login' %}">Войти</a>
-            <a href="{% url 'register' %}" style="background: white; color: black; padding: 6px 15px; border-radius: 20px;">Регистрация</a>
-        {% endif %}
-    </nav>
-</header>
+    {% include 'includes/sprite.html' %}
 
-<main>
-    {% block content %}{% endblock %}
-</main>
+    <div class="app-layout" id="app-shell" data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+        data-page="{{ request.resolver_match.url_name }}">
+        <aside class="sidebar" aria-label="Основная навигация">
+            <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная"><span class="brand-mark"
+                    aria-hidden="true"><i></i><i></i><i></i></span>SoundMess</a>
+            <nav>
+                <div class="nav-section"><span class="nav-label">Открывай новое</span>
 
-<div class="player-bar is-empty" id="player-bar">
-    <input type="hidden" id="csrf-token" value="{{ csrf_token }}">
-    <span class="player-empty-label" id="player-empty-label">Выберите трек, чтобы начать прослушивание</span>
-    <audio id="main-player" ontimeupdate="updateProgress()"></audio>
-    <div class="player-controls">
-        <button class="btn-play-main" id="play-pause-btn" onclick="togglePlay()">
-            <svg id="play-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            <svg id="pause-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        </button>
-    </div>
-    <div class="player-info">
-        <img id="player-cover" class="player-cover" alt="">
-        <div class="track-info">
-            <div id="player-track-title" class="track-title" style="font-weight:600;"></div>
-            <div id="player-track-artist" class="track-artist" style="font-size:12px; color:var(--text-dim);"></div>
+                    {% include 'includes/nav_link.html' with name='home' label='Треки' icon='music' %}
+
+                    {% include 'includes/nav_link.html' with name='release_list' label='Релизы' icon='disc' %}
+
+                    {% include 'includes/nav_link.html' with name='artist_list' label='Артисты' icon='users' %}
+
+                </div>
+
+                {% if user.is_authenticated %}
+
+                <div class="nav-section"><span class="nav-label">Твоя музыка</span>
+
+                    {% include 'includes/nav_link.html' with name='profile' label='Медиатека' icon='library' %}
+
+                    {% include 'includes/nav_link.html' with name='feed' label='Мои подписки' icon='feed' %}
+
+                    {% include 'includes/nav_link.html' with name='wallet_top_up' label='Демо-кошелёк' icon='wallet' %}
+
+                </div>
+                <div class="nav-section"><span class="nav-label">Для артистов</span>
+
+                    {% if current_artist.moderation_status == 'approved' %}
+
+                    {% include 'includes/nav_link.html' with name='artist_dashboard' label='Мой кабинет' icon='chart' %}
+
+                    {% include 'includes/nav_link.html' with name='upload_track' label='Загрузить трек' icon='upload' %}
+
+                    {% else %}
+
+                    {% include 'includes/nav_link.html' with name='artist_application' label='Стать артистом' icon='mic' %}
+
+                    {% endif %}
+
+                </div>
+
+                {% if can_moderate %}
+                <div class="nav-section"><span class="nav-label">Управление</span>
+                    {% include 'includes/nav_link.html' with name='moderation_dashboard' label='Модерация' icon='shield' %}
+
+                </div>
+                {% endif %}
+
+                {% endif %}
+
+            </nav>
+            <div class="sidebar-bottom">
+
+                {% if user.is_authenticated %}
+                <a class="sidebar-account" href="{% url 'profile_edit' %}"><span class="avatar">
+                        {% with avatar=user.profile.avatar|image_url %}
+
+                        {% if avatar %}
+                        <img src="{{ avatar }}" alt="">
+                        {% else %}
+                        {{ user.username|first|upper }}
+                        {% endif %}
+
+                        {% endwith %}
+                    </span><span><strong>{{ user.username }}</strong><small>Настроить
+                            профиль</small></span></a>
+
+                {% else %}
+                <p class="muted">Любимые треки всегда рядом</p><a class="btn btn-secondary" href="{% url 'login' %}"
+                    >Войти в аккаунт</a>
+                {% endif %}
+
+            </div>
+        </aside>
+        <div class="workspace">
+            <header class="topbar">
+                <a class="brand mobile-brand" href="{% url 'home' %}"><span class="brand-mark"
+                        aria-hidden="true"><i></i><i></i><i></i></span>SoundMess</a>
+                <div class="topbar-caption">SoundMess <span>/</span> <strong>Твоё пространство музыки</strong></div>
+                <div class="topbar-actions">
+
+                    {% if user.is_authenticated %}
+
+                    <details class="account-menu">
+                        <summary><span class="avatar">
+                                {% with avatar=user.profile.avatar|image_url %}
+
+                                {% if avatar %}
+                                <img src="{{ avatar }}" alt="">
+                                {% else %}
+                                {{ user.username|first|upper }}
+                                {% endif %}
+
+                                {% endwith %}
+                            </span><span class="account-name">{{ user.username }}</span>
+                            {% include 'includes/icon.html' with name='chevron' small=True %}
+
+                        </summary>
+                        <div class="dropdown"><a href="{% url 'profile' %}">Медиатека</a><a
+                                href="{% url 'profile_edit' %}">Настройки профиля</a><a
+                                href="{% url 'artist_application' %}">
+                                {% if current_artist %}
+                                Заявка
+                                артиста
+                                {% else %}
+                                Стать артистом
+                                {% endif %}
+                            </a>
+                            {% if can_moderate %}
+                            <a href="{% url 'moderation_dashboard' %}">Модерация</a>
+                            {% endif %}
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit">Выйти</button>
+                            </form>
+                        </div>
+                    </details>
+
+                    {% else %}
+                    <a class="btn btn-ghost" href="{% url 'login' %}">Войти</a><a class="btn btn-secondary"
+                        href="{% url 'register' %}">Регистрация</a>
+                    {% endif %}
+
+                </div>
+            </header>
+            <main class="main-content" id="main-content" tabindex="-1">
+
+                {% if messages %}
+                <div class="messages" aria-live="polite">
+                    {% for message in messages %}
+                    <p
+                        class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'info' %}alert-info{% endif %}">
+                        {{ message }}
+                    </p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}
+
+                {% endblock %}
+
+            </main>
         </div>
+        <nav class="mobile-tabs" aria-label="Разделы">
+            <a href="{% url 'home' %}" {% if request.resolver_match.url_name == 'home' %}class="is-active"
+                aria-current="page" {% endif %}>
+                {% include 'includes/icon.html' with name='music' %}
+                Треки</a>
+            <a href="{% url 'release_list' %}"
+                {% if request.resolver_match.url_name == 'release_list' %}class="is-active" aria-current="page"
+                {% endif %}>
+                {% include 'includes/icon.html' with name='disc' %}
+                Релизы</a>
+            <a href="{% url 'feed' %}" {% if request.resolver_match.url_name == 'feed' %}class="is-active"
+                aria-current="page" {% endif %}>
+                {% include 'includes/icon.html' with name='feed' %}
+                Подписки</a>
+            <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="is-active"
+                aria-current="page" {% endif %}>
+                {% include 'includes/icon.html' with name='library' %}
+                Медиатека</a>
+        </nav>
+        {{ playlist_options|json_script:"playlist-options" }}
     </div>
-    <div class="player-progress">
-        <span id="current-time" style="font-size:11px; color:var(--text-dim); min-width:35px;">0:00</span>
-        <input type="range" id="progress-bar" value="0" step="1" oninput="seek()" style="flex-grow:1;">
-        <span id="total-time" style="font-size:11px; color:var(--text-dim); min-width:35px;">0:00</span>
-    </div>
-    <div class="player-volume">
-        <button onclick="toggleMute()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
-            <svg id="vol-icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path id="vol-high" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-                <path id="vol-muted" style="display:none;" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-            </svg>
+    <section class="player is-empty" id="player-bar" aria-label="Аудиоплеер">
+        <audio id="main-player" preload="metadata"></audio>
+        <div class="player-info">
+            <div class="player-art"><img id="player-cover" alt="" hidden><span id="player-cover-placeholder">
+                    {% include 'includes/icon.html' with name='music' %}
+                </span></div>
+            <div class="track-info"><a class="player-title" id="player-track-title">Выберите трек</a>
+                <p class="player-artist" id="player-track-artist">Музыка начнётся здесь</p>
+            </div>
+            <button class="icon-button" id="player-like" data-like-id="" disabled aria-label="Добавить в любимое"
+                aria-pressed="false">
+                {% include 'includes/icon.html' with name='heart' %}
+            </button>
+        </div>
+        <div class="player-center">
+            <div class="player-controls">
+                <button class="icon-button player-prev" id="player-prev" aria-label="Предыдущий трек" disabled>
+                    {% include 'includes/icon.html' with name='previous' %}
+                </button>
+                <button class="player-toggle" id="player-toggle" aria-label="Воспроизвести" disabled><svg class="icon"
+                        aria-hidden="true">
+                        <use href="#icon-play"></use>
+                    </svg></button>
+                <button class="icon-button" id="player-next" aria-label="Следующий трек" disabled>
+                    {% include 'includes/icon.html' with name='next' %}
+                </button>
+            </div>
+            <div class="player-timeline"><span id="current-time">0:00</span><input id="progress-bar" type="range"
+                    min="0" max="0" value="0" step="0.1" disabled aria-label="Позиция воспроизведения"><span
+                    id="total-time">0:00</span></div>
+        </div>
+        <div class="player-volume"><button class="icon-button" id="player-mute" aria-label="Выключить звук">
+                {% include 'includes/icon.html' with name='volume' %}
+            </button><input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8"
+                aria-label="Громкость"></div>
+    </section>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+        <h2 id="confirm-title">Подтвердите действие</h2>
+        <p id="confirm-message"></p>
+        <div class="button-row"><button class="btn btn-danger" id="confirm-accept">Подтвердить</button><button
+                class="btn btn-secondary" id="confirm-cancel">Отмена</button></div>
+    </dialog>
+    <dialog id="playlist-dialog" aria-labelledby="playlist-title"><button class="icon-button dialog-close"
+            data-close-dialog aria-label="Закрыть">
+            {% include 'includes/icon.html' with name='close' %}
         </button>
-        <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" oninput="changeVolume()" style="width: 80px;">
-    </div>
-    <div class="player-extra" aria-hidden="true">
-        <span>⋮</span><span>☰</span>
-    </div>
-</div>
-
-<script>
-    const player = document.getElementById('main-player');
-    const playBtn = document.getElementById('play-icon');
-    const pauseBtn = document.getElementById('pause-icon');
-    const progressBar = document.getElementById('progress-bar');
-    const trackTitle = document.getElementById('player-track-title');
-    const trackArtist = document.getElementById('player-track-artist');
-    const playerBar = document.getElementById('player-bar');
-    const playerEmptyLabel = document.getElementById('player-empty-label');
-    const playerCover = document.getElementById('player-cover');
-    let currentActiveRow = null;
-    let playbackToken = null;
-    let playedSeconds = 0;
-    let lastObservedTime = 0;
-    let playCountSent = false;
-
-    function initTrackRows() {
-        document.querySelectorAll('.track-row[data-url]').forEach(row => {
-            if (row.dataset.playerBound === 'true') return;
-            row.dataset.playerBound = 'true';
-            row.addEventListener('click', (e) => {
-                if (e.target.closest('button, a, form, .track-comments')) return;
-                const url = row.getAttribute('data-url');
-                const trackId = row.getAttribute('data-id');
-                const title = row.querySelector('.track-title').innerText;
-                const artist = row.querySelector('.track-artist').innerText;
-                if (currentActiveRow === row) { 
-                    togglePlay(); 
-                } else {
-                    if (currentActiveRow) {
-                        currentActiveRow.classList.remove('is-playing');
-                        const p = currentActiveRow.querySelector('.icon-play');
-                        const s = currentActiveRow.querySelector('.icon-pause');
-                        if(p) p.style.display = 'block';
-                        if(s) s.style.display = 'none';
-                    }
-                    playNewTrack(url, title, artist, row, trackId);
-                }
-            });
-
-            const url = row.getAttribute('data-url'); // Берем ссылку на трек
-            const durationSpan = row.querySelector('.list-track-duration'); // Находим наш span
-
-            if (url && durationSpan) {
-                // Создаем виртуальный аудио-элемент в памяти браузера
-                const tempAudio = new Audio(url); 
-                
-                tempAudio.addEventListener('loadedmetadata', () => {
-                    durationSpan.innerText = formatTime(tempAudio.duration);
-                });
-            }
-        });
-        syncActiveRow();
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const savedTrack = JSON.parse(localStorage.getItem('player-track') || 'null');
-        if (savedTrack) {
-            player.dataset.trackId = savedTrack.id || '';
-            trackTitle.innerText = savedTrack.title || '';
-            trackArtist.innerText = savedTrack.artist || '';
-            if (savedTrack.url) {
-                player.src = savedTrack.url;
-                player.currentTime = 0;
-            }
-            if (savedTrack.cover) playerCover.src = savedTrack.cover;
-            playerBar.classList.remove('is-empty');
-            playerEmptyLabel.hidden = true;
-        }
-        initTrackRows();
-    });
-
-    function syncActiveRow() {
-        const activeId = player.dataset.trackId;
-        currentActiveRow = activeId ? document.querySelector(`.track-row[data-id="${activeId}"]`) : null;
-        if (currentActiveRow) {
-            currentActiveRow.classList.add('is-playing');
-            updateUI(!player.paused);
-            updateProgress();
-        } else if (!player.src) {
-            progressBar.value = 0;
-        }
-    }
-
-    function playNewTrack(url, title, artist, row, trackId) {
-        player.src = url;
-        trackTitle.innerText = title;
-        trackArtist.innerText = artist;
-        currentActiveRow = row;
-        playbackToken = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-        playedSeconds = 0;
-        lastObservedTime = 0;
-        playCountSent = false;
-        currentActiveRow.classList.add('is-playing');
-        player.dataset.trackId = trackId || '';
-        const cover = row.querySelector('.track-icon-wrapper img');
-        const coverUrl = cover ? cover.src : '';
-        localStorage.setItem('player-track', JSON.stringify({
-            id: trackId || '', title, artist, cover: coverUrl, url
-        }));
-        playerBar.classList.remove('is-empty');
-        playerEmptyLabel.hidden = true;
-        if (coverUrl) playerCover.src = coverUrl;
-        player.play();
-        updateUI(true);
-
-        if (trackId) {
-        fetch(`/history/add/${trackId}/`)
-            .then(response => response.json())
-        }
-    }
-
-    function togglePlay() {
-        if (!player.src) return;
-        if (player.paused) { player.play(); updateUI(true); } 
-        else { player.pause(); updateUI(false); }
-    }
-
-    function updateUI(isPlaying) {
-        playBtn.style.display = isPlaying ? 'none' : 'block';
-        pauseBtn.style.display = isPlaying ? 'block' : 'none';
-        if (currentActiveRow) {
-            const p = currentActiveRow.querySelector('.icon-play');
-            const s = currentActiveRow.querySelector('.icon-pause');
-            if(p) p.style.display = isPlaying ? 'none' : 'block';
-            if(s) s.style.display = isPlaying ? 'block' : 'none';
-        }
-    }
-
-    function updateProgress() {
-        if (!player.duration) return;
-        if (!player.paused) {
-            const elapsed = player.currentTime - lastObservedTime;
-            if (elapsed > 0 && elapsed <= 2) playedSeconds += elapsed;
-        }
-        lastObservedTime = player.currentTime;
-        if (!playCountSent && playedSeconds >= 30 && currentActiveRow) {
-            recordPlay(currentActiveRow.dataset.id);
-        }
-        progressBar.max = player.duration;
-        progressBar.value = player.currentTime;
-        document.getElementById('current-time').innerText = formatTime(player.currentTime);
-        document.getElementById('total-time').innerText = formatTime(player.duration);
-    }
-
-    async function recordPlay(trackId) {
-        playCountSent = true;
-        const response = await fetch(`/track/${trackId}/play/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.getElementById('csrf-token').value
-            },
-            body: JSON.stringify({ playback_token: playbackToken })
-        });
-        if (!response.ok) playCountSent = false;
-    }
-
-    function seek() { player.currentTime = progressBar.value; }
-    function formatTime(secs) {
-        const min = Math.floor(secs / 60);
-        const sec = Math.floor(secs % 60);
-        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-    }
-    function changeVolume() { player.volume = document.getElementById('volume-slider').value; updateVolumeIcon(); }
-    function toggleMute() { player.muted = !player.muted; updateVolumeIcon(); }
-    function updateVolumeIcon() {
-        const h = document.getElementById('vol-high');
-        const m = document.getElementById('vol-muted');
-        if (player.muted || player.volume === 0) { h.style.display = 'none'; m.style.display = 'block'; } 
-        else { h.style.display = 'block'; m.style.display = 'none'; }
-    }
-
-    async function navigateWithoutReload(url, pushState = true) {
-        const response = await fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
-        if (!response.ok) {
-            window.location.href = url;
-            return;
-        }
-        const html = await response.text();
-        const nextDocument = new DOMParser().parseFromString(html, 'text/html');
-        const nextMain = nextDocument.querySelector('main');
-        const currentMain = document.querySelector('main');
-        if (!nextMain || !currentMain) {
-            window.location.href = url;
-            return;
-        }
-        const nextScripts = [...nextMain.querySelectorAll('script')].map(script => script.textContent);
-        currentMain.replaceChildren(...nextMain.childNodes);
-        document.title = nextDocument.title;
-        if (pushState) window.history.pushState({}, '', url);
-        nextScripts.forEach(scriptText => {
-            const replacement = document.createElement('script');
-            replacement.textContent = scriptText;
-            document.body.appendChild(replacement);
-            replacement.remove();
-        });
-        initTrackRows();
-    }
-
-    document.addEventListener('click', event => {
-        const link = event.target.closest('a');
-        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        if (link.target === '_blank' || link.hasAttribute('download') || link.origin !== window.location.origin || link.pathname.startsWith('/admin/')) return;
-        if (link.pathname === window.location.pathname && link.search === window.location.search && link.hash) return;
-        event.preventDefault();
-        navigateWithoutReload(link.href).catch(() => { window.location.href = link.href; });
-    });
-
-    window.addEventListener('popstate', () => {
-        navigateWithoutReload(window.location.href, false).catch(() => { window.location.reload(); });
-    });
-
-    window.toggleMenu = function(event, menuId) {
-        event.preventDefault();
-        event.stopPropagation();
-        document.querySelectorAll('.context-menu').forEach(menu => {
-            if (menu.id !== menuId) menu.classList.remove('active');
-        });
-        const menu = document.getElementById(menuId);
-        if (menu) menu.classList.toggle('active');
-    };
-
-    window.addToAlbum = async function(trackId, albumId, element) {
-        const response = await fetch('/album/add-track/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.getElementById('csrf-token').value
-            },
-            body: JSON.stringify({track_id: trackId, album_id: albumId})
-        });
-        if (!response.ok) return;
-        const result = await response.json();
-        const button = element.querySelector('.add-btn');
-        if (result.status === 'added' && button) {
-            button.textContent = '✓';
-            setTimeout(() => document.querySelectorAll('.context-menu').forEach(menu => menu.classList.remove('active')), 700);
-        } else if (result.status === 'exists') {
-            window.alert('Трек уже есть в этом альбоме');
-        }
-    };
-</script>
+        <h2 id="playlist-title">Добавить в плейлист</h2>
+        <div id="playlist-options-list" class="playlist-options"></div><a class="btn btn-secondary"
+            href="{% url 'create_album' %}">
+            {% include 'includes/icon.html' with name='plus' %}
+            Новый плейлист</a>
+    </dialog>
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

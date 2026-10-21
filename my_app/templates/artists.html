@@ -1,18 +1,58 @@
 {% extends 'base.html' %}
 
+{% load music %}
+
+{% block title %}
+Артисты
+{% endblock %}
+
 {% block content %}
-<section class="directory-page">
-    <h1>Артисты</h1>
-    <div class="artist-grid">
-        {% for artist in artists %}
-            <a class="artist-card" href="{% url 'artist_detail' artist.id %}">
-                <div class="artist-avatar">{{ artist.user.username|first|upper }}</div>
-                <strong>{{ artist.user.username }}</strong>
-                <span>{{ artist.tracks.count }} треков</span>
-            </a>
-        {% empty %}
-            <p class="muted">Одобренных артистов пока нет.</p>
-        {% endfor %}
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">За каждой музыкой — человек</p>
+        <h1>Артисты</h1>
+        <p>Найди свой звук. Подпишись, чтобы первым услышать новое.</p>
     </div>
-</section>
+</div>
+<nav class="tabs" aria-label="Каталог"><a class="tab" href="{% url 'home' %}">Треки</a><a class="tab"
+        href="{% url 'release_list' %}">Релизы</a><a class="tab is-active" href="{% url 'artist_list' %}"
+        aria-current="page">Артисты <span class="tab-count">{{ page_obj.paginator.count }}</span></a></nav>
+<form method="get" class="search-row">
+    <div class="search-box">
+        {% include 'includes/icon.html' with name='search' %}
+        <label class="sr-only" for="artist-search">Найти артиста</label><input type="search" id="artist-search" name="q"
+            value="{{ search }}" maxlength="200" placeholder="Найти артиста">
+    </div><button class="btn btn-secondary">Найти</button>
+</form>
+
+{% if artists %}
+<div class="card-grid">
+    {% for artist in artists %}
+    <article class="music-card artist-card"><a class="music-card-art" href="{{ artist.get_absolute_url }}">
+            {% with avatar=artist.user.profile.avatar|image_url %}
+
+            {% if avatar %}
+            <img src="{{ avatar }}" alt="" loading="lazy">
+            {% else %}
+            <span class="art-placeholder">{{ artist.user.username|first|upper }}</span>
+            {% endif %}
+
+            {% endwith %}
+        </a><a class="music-card-title" href="{{ artist.get_absolute_url }}">{{ artist.user.username }}</a>
+        <p class="music-card-caption">Артист</p>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='users' %}
+
+    <h2>Артисты не найдены</h2>
+    <p>Попробуйте другое имя.</p>
+</div>
+{% endif %}
+
+{% include 'includes/pagination.html' %}
+
 {% endblock %}

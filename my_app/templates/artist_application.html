@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Заявка артиста
+{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Делись своим звучанием</p>
+            <h1>Стать артистом</h1>
+            <p>После одобрения заявки ты сможешь загружать треки и создавать релизы.</p>
+        </div>
+    </div>
+    {% if application %}
+    <div class="panel">
+        <div class="review-head">
+            <h2>Твоя заявка</h2>
+            {% include 'includes/status.html' with item=application %}
+
+        </div>
+        {% if application.moderation_note %}
+        <p class="review-description">{{ application.moderation_note }}</p>
+
+        {% endif %}
+
+        {% if application.moderation_status == 'approved' %}
+        <p class="muted">Всё готово. Можно публиковать
+            свою музыку.</p>
+        <div class="button-row"><a class="btn" href="{% url 'artist_dashboard' %}">Открыть кабинет</a></div>
+
+        {% elif application.moderation_status == 'pending' %}
+        <p class="muted">Модератор проверяет заявку. Решение
+            появится здесь.</p>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+    {% if not application or application.moderation_status != 'approved' %}
+    <div class="panel">
+        <form method="post">
+
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% endfor %}
+
+            <div class="button-row"><button class="btn">
+                    {% if application.moderation_status == 'pending' %}
+                    Дополнить
+                    заявку
+                    {% else %}
+                    Отправить заявку
+                    {% endif %}
+                </button></div>
+        </form>
+    </div>
+    {% endif %}
+
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% url name as nav_url %}
+<a class="nav-link {% if request.resolver_match.url_name == name %}is-active{% endif %}" href="{{ nav_url }}"
+    {% if request.resolver_match.url_name == name %}aria-current="page" {% endif %}>
+    {% include 'includes/icon.html' with name=icon %}
+    <span>{{ label }}</span></a>

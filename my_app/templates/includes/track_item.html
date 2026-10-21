@@ -1,345 +1,76 @@
-<style>
-    
-    .remove-track-btn {
-        background: none;
-        border: none;
-        color: var(--text-dim);
-        cursor: pointer;
-        padding: 8px; /* Увеличили область клика */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 0.2s;
-        position: relative; /* Важно */
-        z-index: 10;       /* Чтобы была выше всей строки */
-    }
-    .remove-track-btn:hover {
-        color: #ff4d4d !important;
-        background: rgba(255, 77, 77, 0.1);
-        border-radius: 50%;
-    }
-    .remove-track-btn svg {
-        pointer-events: none; /* Чтобы клик не "застревал" в иконке */
-    }
-    /* Кнопка три точки */
-    .more-options {
-        background: none; border: none; color: var(--text-dim);
-        cursor: pointer; padding: 5px; display: flex; align-items: center;
-        border-radius: 50%; transition: 0.2s; position: relative;
-    }
-    .more-options:hover { background: rgba(255,255,255,0.1); color: white; }
+{% load music %}
 
-    /* Выпадающее меню */
-    .context-menu {
-        position: absolute; right: 0; top: 35px; width: 220px;
-        background: #282828; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        display: none; z-index: 1000; padding: 8px;
-        border: 1px solid #3e3e3e;
-    }
-    .context-menu.active { display: block; }
-    
-    .menu-header { font-size: 11px; color: var(--text-dim); padding: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    
-    .album-option-list { max-height: 200px; overflow-y: auto; }
-    
-    .album-option {
-        display: flex; align-items: center; gap: 10px; padding: 8px;
-        border-radius: 4px; transition: 0.2s; cursor: pointer; text-decoration: none; color: white;
-    }
-    .album-option:hover { background: #3e3e3e; }
-    
-    .mini-cover { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; background: #181818; }
-    .album-opt-info { flex-grow: 1; min-width: 0; }
-    .album-opt-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    
-    .add-btn { color: var(--accent-color); font-weight: bold; font-size: 18px; }
+{% with cover=track.cover|image_url audio_url=track.audio_url %}
 
-    .track-row {
-        display: flex; align-items: center; gap: 15px;
-        padding: 10px 16px; border-radius: 8px; transition: 0.2s; cursor: pointer;
-    }
-    .track-row:hover { background: var(--hover-white); }
-    .track-row.is-playing { background: rgba(255, 80, 0, 0.1); }
-
-        .track-row.is-playing { background: rgba(255, 80, 0, 0.1); }
-    .track-row.is-playing .track-title { color: var(--accent-color); }
-    .track-row.is-playing .icon-pause { opacity: 1 !important; }
-    .track-row.is-playing img { filter: brightness(0.4); }
-    
-    .track-icon-wrapper {
-        position: relative; width: 48px; height: 48px;
-        background: #282828; border-radius: 4px; overflow: hidden;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .track-icon-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .play-icon-svg {
-        position: absolute; width: 20px; height: 20px; fill: #fff;
-        opacity: 0; transition: 0.2s; z-index: 2;
-    }
-    .track-row:hover .play-icon-svg { opacity: 1; }
-    .track-row:hover img { filter: brightness(0.5); }
-    
-    .track-info { flex-grow: 1; min-width: 0; }
-    .track-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
-    .track-artist { color: var(--text-dim); font-size: 13px; }
-    
-    .track-meta { display: flex; align-items: center; gap: 15px; color: var(--text-dim); font-size: 13px; }
-    .track-comments { margin: -2px 16px 10px 79px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-    .comments-list { display: flex; flex-direction: column; gap: 4px; }
-    .comment-item { display: flex; gap: 10px; border: 0; background: none; color: var(--text-main); text-align: left; padding: 5px; cursor: pointer; }
-    .comment-time { color: var(--accent-color); min-width: 38px; }
-    .comment-form { display: flex; gap: 8px; margin-top: 8px; }
-    .comment-form input { margin: 0; }
-    .comments-empty, .comments-login { color: var(--text-dim); font-size: 13px; }
-    .comment-timeline { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .comment-timeline-input { flex: 1; margin: 0 !important; }
-    .comment-timeline-time { min-width: 38px; color: var(--accent-color); font-size: 12px; }
-</style>
-
-<div class="track-row" data-url="{{ track.audio_file.url }}" data-id="{{ track.id }}" data-duration="{{ track.duration_seconds|default:'0' }}">
-    <div class="track-icon-wrapper">
-        {% if track.cover %}
-            <img src="{{ track.cover.url }}" alt="cover">
+<div class="track-row" data-track-id="{{ track.id }}" data-title="{{ track.title }}"
+    data-artist="{{ track.artist.user.username }}" data-url="{{ audio_url }}" data-cover="{{ cover }}"
+    data-detail="{{ track.get_absolute_url }}" data-duration="{{ track.duration_seconds|default:0 }}"
+    data-liked="{{ track.is_liked|yesno:'true,false' }}"
+    data-countable="{% if track.moderation_status == 'approved' and track.artist.moderation_status == 'approved' %}true{% else %}false{% endif %}">
+    <div class="track-art">
+        {% if cover %}
+        <img src="{{ cover }}" alt="" loading="lazy">
+        {% else %}
+        <span class="art-placeholder">
+            {% include 'includes/icon.html' with name='music' %}
+        </span>
         {% endif %}
-        <svg class="play-icon-svg icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <svg class="play-icon-svg icon-pause" viewBox="0 0 24 24" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        <button class="track-play" data-play-track
+            aria-label="{% if audio_url %}Слушать {{ track.title }}{% else %}Аудиофайл недоступен{% endif %}"
+            {% if not audio_url %}disabled{% endif %}><svg class="icon" aria-hidden="true">
+                <use href="#icon-play"></use>
+            </svg></button>
     </div>
-    
-    <div class="track-info">
-        <div class="track-title">{{ track.title }}</div>
-        <div class="track-artist">{{ track.artist.user.username }}</div>
-    </div>
+    <div class="track-info"><a class="track-title" href="{{ track.get_absolute_url }}">{{ track.title }}
 
-    <div class="track-meta">
-        {% if user.is_authenticated %}
-        <button type="button" class="like-button" data-track-id="{{ track.id }}" onclick="toggleLike(event, this)" aria-label="Поставить лайк" style="background: none; border: 0; padding: 0; cursor: pointer;">
-            <svg class="heart-icon {% if user.is_authenticated and track in user.liked_tracks.all %}is-liked{% endif %}" viewBox="0 0 24 24" width="20" height="20">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
-        </button>
+            {% if track.is_explicit %}
+            <span class="badge" title="Ненормативная лексика">E</span>
+            {% endif %}
+        </a><a class="track-artist" href="{{ track.artist.get_absolute_url }}">{{ track.artist.user.username }}</a>
+    </div>
+    <span class="track-genre">{{ track.get_genre_display }}</span><span class="track-stat"
+        title="Прослушивания">{{ track.plays_count }}</span>
+    <span class="track-duration">
+        {% if track.duration_seconds %}
+        {{ track.duration_seconds|duration }}
+        {% else %}
+        —
         {% endif %}
-        <a class="comments-toggle" href="{% url 'comment_page' track.id %}" aria-label="Комментарии" title="Комментарии" style="display: inline-flex; align-items: center; color: var(--text-dim);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 12.5z"/><path d="M8 8h8M8 11h5"/></svg>
+    </span>
+    <div class="track-actions">
+
+        {% if track.moderation_status == 'approved' %}
+
+        <span class="like-control"><button class="icon-button {% if track.is_liked %}is-liked{% endif %}"
+                data-like-id="{{ track.id }}" data-liked="{{ track.is_liked|yesno:'true,false' }}"
+                data-like-url="{% url 'toggle_like' track.id %}"
+                aria-label="{% if track.is_liked %}Убрать из любимого{% else %}Добавить в любимое{% endif %}"
+                aria-pressed="{{ track.is_liked|yesno:'true,false' }}">
+                {% include 'includes/icon.html' with name='heart' small=True %}
+            </button><span class="like-count"
+                data-like-count="{{ track.id }}">{{ track.like_count|default:0 }}</span></span>
+        <a class="icon-button" href="{{ track.get_absolute_url }}" aria-label="Комментарии к {{ track.title }}">
+            {% include 'includes/icon.html' with name='comment' small=True %}
         </a>
 
-        {% if current_album and not current_album.is_favorite_folder %}
-        <button type="button" 
-                class="remove-track-btn" 
-                onclick="event.stopPropagation(); removeFromAlbum(event, '{{ track.id }}', '{{ current_album.id }}')"
-                title="Удалить из альбома">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+        {% if current_album.owner == user and not current_album.is_favorite_folder %}
+        <button class="icon-button" data-remove-track="{{ track.id }}" data-album-id="{{ current_album.id }}"
+            aria-label="Удалить из плейлиста">
+            {% include 'includes/icon.html' with name='close' small=True %}
+        </button>
+
+        {% else %}
+        <button class="icon-button" data-add-track="{{ track.id }}" aria-label="Добавить в плейлист">
+            {% include 'includes/icon.html' with name='plus' small=True %}
         </button>
         {% endif %}
 
-        <div style="position: relative;" onclick="event.stopPropagation();">
-            <button class="more-options" onclick="toggleMenu(event, 'menu-{{ track.id }}')">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                </svg>
-            </button>
+        {% else %}
 
-            {% if user.is_authenticated %}
-            <div id="menu-{{ track.id }}" class="context-menu">
-                <div class="menu-header">Добавить в альбом</div>
-                <div class="album-option-list">
-                    {% for album in user.albums.all %}
-                        {% if not album.is_favorite_folder %}
-                        <div class="album-option" onclick="addToAlbum('{{ track.id }}', '{{ album.id }}', this)">
-                            {% if album.cover %}
-                                <img src="{{ album.cover.url }}" class="mini-cover">
-                            {% else %}
-                                <div class="mini-cover" style="display:flex; align-items:center; justify-content:center; font-size:12px;">💿</div>
-                            {% endif %}
-                            <div class="album-opt-info">
-                                <div class="album-opt-title">{{ album.title }}</div>
-                            </div>
-                            <div class="add-btn">+</div>
-                        </div>
-                        {% endif %}
-                    {% empty %}
-                        <div style="padding: 10px; font-size: 12px; color: var(--text-dim);">У вас нет альбомов</div>
-                    {% endfor %}
+        {% include 'includes/status.html' with item=track %}
 
-                    <hr style="border: 0; border-top: 1px solid #3e3e3e; margin: 4px 0;">
-                    <a href="{% url 'create_album' %}" class="album-option create-album-btn" style="text-decoration: none;">
-                        <div class="mini-cover" style="display:flex; align-items:center; justify-content:center; background: #333; color: var(--accent-color); font-size: 18px; font-weight: bold;">
-                            +
-                        </div>
-                        <div class="album-opt-info">
-                            <div class="album-opt-title" style="color: var(--accent-color);">Создать альбом</div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        <span class="list-track-duration">--:--</span>
+        {% endif %}
+
     </div>
 </div>
-
-<div class="track-comments" data-track-id="{{ track.id }}" hidden>
-    <div class="comment-timeline" hidden>
-        <span class="comment-timeline-time">0:00</span>
-        <input class="comment-timeline-input" type="range" min="0" max="{{ track.duration_seconds|default:'0' }}" value="0" step="1" oninput="seekCommentTimeline(this)">
-    </div>
-    <div class="comments-list"></div>
-    {% if user.is_authenticated %}
-    <form class="comment-form" onsubmit="submitComment(event, this)">
-        <input type="text" name="text" maxlength="1000" placeholder="Комментарий на текущей секунде..." required>
-        <button type="submit">Отправить</button>
-    </form>
-    {% else %}
-    <p class="comments-login">Войдите, чтобы оставить комментарий с таймкодом.</p>
-    {% endif %}
-</div>
-
-<script>
-
-    function toggleMenu(event, menuId) {
-        event.stopPropagation();
-
-        document.querySelectorAll('.context-menu').forEach(m => {
-            if (m.id !== menuId) m.classList.remove('active');
-        });
-
-        const menu = document.getElementById(menuId);
-        menu.classList.toggle('active');
-    }
-
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-    });
-
-
-    async function addToAlbum(trackId, albumId, element) {
-        const response = await fetch('/album/add-track/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                track_id: trackId,
-                album_id: albumId
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'added') {
-            const btn = element.querySelector('.add-btn');
-            btn.innerHTML = '✓';
-            btn.style.color = '#1db954';
-            setTimeout(() => {
-                document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-                btn.innerHTML = '+';
-                btn.style.color = 'var(--accent-color)';
-            }, 1000);
-        } else if (result.status === 'exists') {
-            alert('Трек уже есть в этом альбоме');
-            setTimeout(() => {
-                document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('active'));
-            }, 1000);
-        }
-    }
-</script>
-
-<script>
-    async function toggleLike(event, button) {
-        event.stopPropagation();
-        const response = await fetch(`/like/toggle/${button.dataset.trackId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        if (response.status === 401) {
-            window.location.href = '{% url "login" %}?next=' + encodeURIComponent(window.location.pathname);
-            return;
-        }
-        if (!response.ok) return;
-
-        const result = await response.json();
-        button.querySelector('.heart-icon').classList.toggle('is-liked', result.liked);
-    }
-
-    async function loadComments(trackId, panel) {
-        const response = await fetch(`/track/${trackId}/comments/`);
-        if (!response.ok) return;
-        const result = await response.json();
-        panel.querySelector('.comments-list').innerHTML = result.comments.map(comment => `
-            <button type="button" class="comment-item" onclick="seekToComment(${comment.timestamp_seconds})">
-                <span class="comment-time">${formatCommentTime(comment.timestamp_seconds)}</span>
-                <span><strong>${escapeCommentHtml(comment.author)}</strong> ${escapeCommentHtml(comment.text)}</span>
-            </button>
-        `).join('') || '<p class="comments-empty">Комментариев пока нет.</p>';
-        const timeline = panel.querySelector('.comment-timeline');
-        timeline.hidden = result.comments.length === 0;
-        if (result.comments.length) {
-            const latest = result.comments[result.comments.length - 1].timestamp_seconds;
-            timeline.querySelector('.comment-timeline-input').value = latest;
-            updateCommentTimelineLabel(timeline.querySelector('.comment-timeline-input'));
-        }
-    }
-
-    function toggleComments(event, button) {
-        event.stopPropagation();
-        const panel = button.closest('.track-row').nextElementSibling;
-        panel.hidden = !panel.hidden;
-        if (!panel.hidden) loadComments(panel.dataset.trackId, panel);
-    }
-
-    function seekToComment(seconds) {
-        player.currentTime = seconds;
-        player.play();
-    }
-
-    function seekCommentTimeline(input) {
-        player.currentTime = Number(input.value);
-        updateCommentTimelineLabel(input);
-    }
-
-    function updateCommentTimelineLabel(input) {
-        input.closest('.comment-timeline').querySelector('.comment-timeline-time').textContent = formatCommentTime(input.value);
-    }
-
-    function formatCommentTime(seconds) {
-        return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-    }
-
-    function escapeCommentHtml(value) {
-        return String(value).replace(/[&<>'"]/g, character => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-        }[character]));
-    }
-
-    async function submitComment(event, form) {
-        event.preventDefault();
-        event.stopPropagation();
-        const panel = form.closest('.track-comments');
-        const response = await fetch(`/track/${panel.dataset.trackId}/comments/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                text: form.elements.text.value,
-                timestamp_seconds: Math.floor(player.currentTime || 0)
-            })
-        });
-        if (response.status === 401) {
-            window.location.href = '{% url "login" %}?next=' + encodeURIComponent(window.location.pathname);
-            return;
-        }
-        if (!response.ok) return;
-        form.reset();
-        loadComments(panel.dataset.trackId, panel);
-    }
-</script>
+{% endwith %}

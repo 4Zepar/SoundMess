@@ -1,0 +1,18 @@
+{% load music %}
+<article class="music-card">
+    <a class="music-card-art" href="{{ album.get_absolute_url }}">
+        {% with cover=album.cover|image_url %}
+
+        {% if cover %}
+        <img src="{{ cover }}" alt="" loading="lazy">
+        {% else %}
+        <span class="art-placeholder">
+            {% include 'includes/icon.html' with name='disc' %}
+        </span>
+        {% endif %}
+
+        {% endwith %}
+    </a>
+    <a class="music-card-title" href="{{ album.get_absolute_url }}">{{ album.title }}</a>
+    <p class="music-card-caption">{{ album.owner.username }} · {{ album.track_count|default:0 }} треков</p>
+</article>

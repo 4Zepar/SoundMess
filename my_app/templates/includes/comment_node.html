@@ -1,11 +1,40 @@
-<article class="comment-node" data-comment-id="{{ comment.id }}">
-    <div class="comment-author-avatar">
-        {% if comment.author.profile.avatar %}<img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}">{% else %}<span class="comment-avatar-placeholder"></span>{% endif %}
+{% load music %}
+<article class="comment-node" data-comment-id="{{ node.comment.id }}" data-depth="{{ depth }}">
+    <div class="avatar">
+        {% with avatar=node.comment.author.profile.avatar|image_url %}
+
+        {% if avatar %}
+        <img src="{{ avatar }}" alt="">
+        {% else %}
+        {{ node.comment.author.username|first|upper }}
+        {% endif %}
+
+        {% endwith %}
+
     </div>
     <div class="comment-body">
-        <div class="comment-meta"><strong>{{ comment.author.username }}</strong><button type="button" class="comment-timestamp" data-seconds="{{ comment.timestamp_seconds }}">{{ comment.timestamp_seconds|floatformat:0 }} сек.</button></div>
-        <p>{{ comment.text }}</p>
-        {% if user.is_authenticated %}<button type="button" class="reply-button" data-parent-id="{{ comment.id }}">Ответить</button><form class="reply-form" data-parent-id="{{ comment.id }}" hidden><input name="text" maxlength="1000" placeholder="Ваш ответ" required><button type="submit">Ответить</button></form>{% endif %}
-        {% with replies=comment.replies.all %}{% if replies %}<div class="comment-replies">{% for reply in replies %}{% include 'includes/comment_node.html' with comment=reply %}{% endfor %}</div>{% endif %}{% endwith %}
+        <div class="comment-meta"><strong>{{ node.comment.author.username }}</strong><button class="timestamp"
+                type="button" data-seek-track="{{ track.id }}"
+                data-seconds="{{ node.comment.timestamp_seconds }}">{{ node.comment.timestamp_seconds|duration }}</button><time
+                datetime="{{ node.comment.created_at|date:'c' }}">{{ node.comment.created_at|date:'d.m H:i' }}</time>
+        </div>
+        <p>{{ node.comment.text }}</p>
+        {% if user.is_authenticated and depth < 3 %}
+        <button class="reply-button" type="button" data-reply="{{ node.comment.id }}">Ответить</button>
+        <form class="reply-form" data-comment-form data-track-id="{{ track.id }}" data-parent-id="{{ node.comment.id }}"
+            data-url="{% url 'add_comment' track.id %}" hidden><label class="sr-only"
+                for="reply-{{ node.comment.id }}">Ответ</label><input id="reply-{{ node.comment.id }}" name="text"
+                maxlength="1000" placeholder="Твой ответ" required><button class="btn btn-secondary">Ответить</button>
+        </form>
+        {% endif %}
+        <div class="comment-replies">
+
+            {% for child in node.children %}
+
+            {% include 'includes/comment_node.html' with node=child depth=depth|add:'1' %}
+
+            {% endfor %}
+
+        </div>
     </div>
 </article>

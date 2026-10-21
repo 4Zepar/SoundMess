@@ -1,14 +1,84 @@
 {% extends 'base.html' %}
+
+{% load music %}
+
+{% block title %}
+Редактор трека
+{% endblock %}
+
 {% block content %}
-<section class="form-card upload-page">
-    <p class="eyebrow">Artist workspace</p>
-    <h1>Загрузка нового трека</h1>
-    <p class="muted">Добавьте аудио, обложку и метаданные релиза.</p>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Опубликовать трек</button>
-    </form>
-    <a href="{% url 'profile' %}" class="muted">Назад в профиль</a>
+<section class="form-page">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Кабинет артиста</p>
+            <h1>
+                {% if track.pk %}
+                Изменить трек
+                {% else %}
+                Новая музыка
+                {% endif %}
+            </h1>
+            <p>Загрузи аудио, добавь обложку и расскажи о своём треке.</p>
+        </div>
+    </div>
+
+    {% if track.pk %}
+    <p class="alert alert-info">
+        {{ track.get_moderation_status_display }}
+        {% if track.moderation_note %}
+        : {{ track.moderation_note }}
+        {% endif %}
+        .
+        Изменённый трек проходит повторную проверку.
+    </p>
+    {% endif %}
+
+    <div class="panel">
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+
+            {% include 'includes/field.html' %}
+
+            {% if field.name == 'cover' %}
+
+            <div class="upload-preview" data-preview-for="id_cover">
+
+                {% with cover=track.cover|image_url %}
+
+                {% if cover %}
+                <img src="{{ cover }}" alt="Обложка">
+                {% else %}
+                <span class="art-placeholder">
+                    {% include 'includes/icon.html' with name='music' %}
+                </span>
+                {% endif %}
+
+                {% endwith %}
+
+            </div>
+            {% endif %}
+
+            {% if field.name == 'audio_file' %}
+            <audio class="audio-preview" controls data-audio-preview {% if not track.audio_file %}hidden{% endif %}
+                {% if track.audio_file %}src="{{ track.audio_url }}" {% endif %}></audio>
+            <p class="helptext" data-audio-duration>
+                {% if track.duration_seconds %}
+                Длительность:
+                {{ track.duration_seconds|duration }}
+                {% endif %}
+            </p>
+            {% endif %}
+
+            {% endfor %}
+
+            <div class="button-row"><button class="btn" type="submit" name="intent" value="submit">Отправить на
+                    проверку</button><button class="btn btn-secondary" type="submit" name="intent"
+                    value="draft">Сохранить черновик</button><a class="btn btn-ghost"
+                    href="{% url 'artist_dashboard' %}">Отмена</a></div>
+        </form>
+    </div>
 </section>
 {% endblock %}

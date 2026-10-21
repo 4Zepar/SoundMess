@@ -1,0 +1,16 @@
+<nav class="tabs" aria-label="Разделы модерации"><a
+        class="tab {% if request.resolver_match.url_name == 'moderation_dashboard' %}is-active{% endif %}"
+        href="{% url 'moderation_dashboard' %}">Обзор</a><a
+        class="tab {% if request.resolver_match.url_name == 'moderation_applications' %}is-active{% endif %}"
+        href="{% url 'moderation_applications' %}">Заявки</a><a
+        class="tab {% if request.resolver_match.url_name == 'moderation_tracks' %}is-active{% endif %}"
+        href="{% url 'moderation_tracks' %}">Треки</a><a
+        class="tab {% if request.resolver_match.url_name == 'moderation_albums' %}is-active{% endif %}"
+        href="{% url 'moderation_albums' %}">Релизы</a><a
+        class="tab {% if request.resolver_match.url_name == 'moderation_comments' %}is-active{% endif %}"
+        href="{% url 'moderation_comments' %}">Комментарии</a>
+    {% if can_manage_users %}
+    <a class="tab {% if request.resolver_match.url_name == 'moderation_users' %}is-active{% endif %}"
+        href="{% url 'moderation_users' %}">Пользователи</a>
+    {% endif %}
+</nav>

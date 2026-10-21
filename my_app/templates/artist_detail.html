@@ -1,63 +1,84 @@
 {% extends 'base.html' %}
 
+{% load music %}
+
+{% block title %}
+{{ artist.user.username }}
+{% endblock %}
+
 {% block content %}
-<section class="artist-page">
-    <div class="artist-hero">
-        {% if artist.user.profile.avatar %}<img class="artist-avatar artist-avatar-large" src="{{ artist.user.profile.avatar.url }}" alt="{{ artist.user.username }}">{% else %}<div class="artist-avatar artist-avatar-large">{{ artist.user.username|first|upper }}</div>{% endif %}
-        <div>
-            <p class="eyebrow">Артист</p>
-            <h1>{{ artist.user.username }}</h1>
-            <p class="muted">{{ artist.bio|default:'Биография пока не заполнена.' }}</p>
-            <p class="muted"><span id="followers-count">{{ artist.followers.count }}</span> подписчиков</p>
-            <div class="artist-actions">
-                <button type="button" id="follow-button" data-artist-id="{{ artist.id }}" onclick="toggleFollow(event)" {% if not user.is_authenticated %}title="Войдите, чтобы подписаться"{% endif %}>
-                    {% if is_following %}Вы подписаны{% else %}Подписаться{% endif %}
-                </button>
-                {% if user.is_authenticated %}<a href="{% url 'support_artist' artist.id %}" class="dashboard-action">Поддержать артиста</a>{% endif %}
-            </div>
+
+<section class="detail-hero artist-hero">
+    <div class="detail-art">
+        {% with avatar=artist.user.profile.avatar|image_url %}
+
+        {% if avatar %}
+        <img src="{{ avatar }}" alt="">
+        {% else %}
+        <span class="art-placeholder">{{ artist.user.username|first|upper }}</span>
+        {% endif %}
+
+        {% endwith %}
+    </div>
+    <div class="detail-info">
+        <p class="eyebrow">Артист</p>
+        <h1>{{ artist.user.username }}</h1>
+        <p>{{ artist.bio|default:'Музыка говорит сама за себя.' }}</p>
+        <p><span data-followers-count="{{ artist.id }}">{{ artist.followers.count }}</span> подписчиков</p>
+        <div class="button-row">
+            {% if user != artist.user %}
+            <button class="btn {% if is_following %}btn-secondary{% endif %}" data-follow-id="{{ artist.id }}"
+                data-following="{{ is_following|yesno:'true,false' }}"
+                data-follow-url="{% url 'toggle_follow' artist.id %}"
+                aria-pressed="{{ is_following|yesno:'true,false' }}">
+                {% if is_following %}
+                Вы
+                подписаны
+                {% else %}
+                Подписаться
+                {% endif %}
+            </button><a class="btn btn-ghost" href="{% url 'support_artist' artist.id %}">
+                {% include 'includes/icon.html' with name='heart' small=True %}
+                Поддержать</a>
+            {% endif %}
+
         </div>
     </div>
-
-    <h2>Треки</h2>
-    <div class="track-list">
-        {% for track in tracks %}
-            {% include 'includes/track_item.html' with track=track %}
-        {% empty %}<p class="muted">У артиста пока нет опубликованных треков.</p>{% endfor %}
-    </div>
-    <h2>Публичные альбомы</h2>
-    <div class="artist-albums">
-        {% for album in albums %}
-            <article class="artist-album-card">
-                <a href="{% url 'album_detail' album.id %}">
-                    <div class="artist-album-cover">{% if album.cover %}<img src="{{ album.cover.url }}" alt="{{ album.title }}">{% else %}♪{% endif %}</div>
-                    <strong>{{ album.title }}</strong>
-                    <span class="muted">{{ album.tracks.count }} треков</span>
-                </a>
-                {% if user.is_authenticated %}
-                <form method="post" action="{% url 'add_album_to_favorites' album.id %}">
-                    {% csrf_token %}<button type="submit" class="secondary-action">В избранное</button>
-                </form>
-                {% endif %}
-            </article>
-        {% empty %}<p class="muted">Публичных альбомов пока нет.</p>{% endfor %}
-    </div>
 </section>
-<script>
-async function toggleFollow(event) {
-    event.stopPropagation();
-    const button = document.getElementById('follow-button');
-    const response = await fetch(`/artist/${button.dataset.artistId}/follow/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken': document.getElementById('csrf-token').value}
-    });
-    if (response.status === 401) {
-        window.location.href = '{% url "login" %}?next=' + encodeURIComponent(window.location.pathname);
-        return;
-    }
-    if (!response.ok) return;
-    const result = await response.json();
-    button.textContent = result.following ? 'Вы подписаны' : 'Подписаться';
-    document.getElementById('followers-count').textContent = result.followers_count;
-}
-</script>
+<div class="section-head">
+    <h2>Треки</h2><small>{{ tracks.count }} треков</small>
+</div>
+
+{% if tracks %}
+<div class="track-list">
+    {% for track in tracks %}
+
+    {% include 'includes/track_item.html' %}
+
+    {% endfor %}
+
+</div>
+{% else %}
+<div class="empty-state">
+    <p>Первые треки появятся здесь после публикации.</p>
+</div>
+{% endif %}
+
+<div class="section-head">
+    <h2>Релизы</h2>
+</div>
+{% if albums %}
+<div class="card-grid">
+
+    {% for album in albums %}
+
+    {% include 'includes/album_card.html' %}
+
+    {% endfor %}
+</div>
+{% else %}
+<p class="muted">
+    Публичных релизов пока нет.</p>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}
+
+{% if kind == 'track' %}
+Проверка треков
+{% else %}
+Проверка
+релизов
+{% endif %}
+
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Модерация</p>
+        <h1>
+            {% if kind == 'track' %}
+            Треки
+            {% else %}
+            Релизы
+            {% endif %}
+            на проверке</h1>
+        <p>Прослушайте материал и проверьте описание перед публикацией.</p>
+    </div>
+</div>
+{% include 'moderation/nav.html' %}
+
+<form method="get" class="search-row">
+    <div class="search-box">
+        {% include 'includes/icon.html' with name='search' %}
+        <label class="sr-only" for="queue-search">Поиск</label><input type="search" id="queue-search" name="q"
+            value="{{ search }}" placeholder="Название или артист">
+    </div><label class="sr-only" for="queue-status">Статус</label><select id="queue-status" name="status">
+        <option value="pending" {% if status == 'pending' %}selected{% endif %}>На проверке</option>
+        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Опубликованные</option>
+        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Отклонённые</option>
+        <option value="hidden" {% if status == 'hidden' %}selected{% endif %}>Скрытые</option>
+        <option value="draft" {% if status == 'draft' %}selected{% endif %}>Черновики</option>
+    </select><button class="btn btn-secondary">Показать</button>
+</form>
+
+{% for item in items %}
+<article class="review-item">
+    <div class="review-head">
+        <div>
+            <h2><a href="{{ item.get_absolute_url }}">{{ item.title }}</a></h2>
+            <p>
+                {% if kind == 'track' %}
+                {{ item.artist.user.username }}
+                {% else %}
+                {{ item.owner.username }}
+                {% endif %}
+                ·
+                {{ item.created_at|date:'d.m.Y H:i' }}
+            </p>
+        </div>
+        {% include 'includes/status.html' %}
+
+    </div>
+    {% if kind == 'track' %}
+    <audio controls class="audio-preview" data-audio-preview src="{{ item.audio_url }}"></audio>
+    {% else %}
+    <p class="review-description">{{ item.description }}</p>
+    {% endif %}
+
+    <div class="button-row"><a class="btn btn-ghost" href="{{ item.get_absolute_url }}">Открыть материал</a></div>
+
+    {% if item.moderation_note %}
+    <p class="review-description">{{ item.moderation_note }}</p>
+    {% endif %}
+
+    {% if item.moderation_status != 'draft' and item.moderation_status != 'rejected' %}
+    <form class="review-controls" method="post"
+        action="{% if kind == 'track' %}{% url 'review_track' item.id %}{% else %}{% url 'review_album' item.id %}{% endif %}">
+
+        {% csrf_token %}
+        <label class="sr-only" for="note-{{ item.id }}">Комментарий артисту</label><textarea id="note-{{ item.id }}"
+            name="note" maxlength="2000" rows="2" placeholder="Причина отклонения или скрытия"></textarea>
+        <div class="button-row">
+            {% if item.moderation_status == 'approved' %}
+            <button class="btn btn-danger" name="decision" value="hidden">Скрыть публикацию</button>
+            {% else %}
+            <button class="btn" name="decision" value="approved">
+                {% if item.moderation_status == 'hidden' %}
+                Восстановить
+                публикацию
+                {% else %}
+                Одобрить
+                {% endif %}
+            </button><button class="btn btn-danger" name="decision" value="rejected">Отклонить</button>
+            {% endif %}
+        </div>
+    </form>
+    {% endif %}
+
+</article>
+{% empty %}
+<div class="empty-state">
+    {% include 'includes/icon.html' with name='check' %}
+    <h2>Очередь пуста</h2>
+    <p>Материалов с выбранным статусом нет.</p>
+</div>
+{% endfor %}
+
+{% include 'includes/pagination.html' %}
+
+{% endblock %}

@@ -1,28 +1,98 @@
 {% extends 'base.html' %}
 
+{% block title %}
+Кабинет артиста
+{% endblock %}
+
 {% block content %}
-<section class="dashboard-page">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
-        <div><p class="eyebrow">Artist workspace</p><h1>Аналитика {{ artist.user.username }}</h1></div>
-        <a href="{% url 'upload_track' %}" class="dashboard-action">Загрузить трек</a>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Кабинет артиста</p>
+        <h1>Твоя музыка в цифрах</h1>
+        <p>{{ artist.user.username }} — создавай, публикуй, наблюдай.</p>
     </div>
-    <div class="dashboard-chart"><canvas id="plays-chart"></canvas></div>
-    <h2>Топ-5 треков</h2>
-    <div class="dashboard-list dashboard-table">
+    <div class="page-actions"><a class="btn btn-secondary" href="{% url 'create_release' %}">
+            {% include 'includes/icon.html' with name='disc' small=True %}
+            Создать
+            релиз</a><a class="btn" href="{% url 'upload_track' %}">
+            {% include 'includes/icon.html' with name='upload' small=True %}
+            Загрузить
+            трек</a></div>
+</div>
+<div class="stats-grid">
+    <article class="stat-card">
+        <p class="eyebrow">За {{ period }} дней</p><strong>{{ chart_total }}</strong><small>прослушиваний</small>
+    </article>
+    <article class="stat-card">
+        <p class="eyebrow">Подписчики</p><strong>{{ followers_count }}</strong><small>следят за музыкой</small>
+    </article>
+    <article class="stat-card">
+        <p class="eyebrow">Треки</p><strong>{{ tracks.count }}</strong><small>в твоём кабинете</small>
+    </article>
+</div>
+<div class="dashboard-columns">
+    <section class="panel">
+        <div class="review-head">
+            <h2>Прослушивания</h2>
+            <nav class="period-switch" aria-label="Период аналитики"><a href="?period=7"
+                    class="{% if period == 7 %}is-active{% endif %}">7 дней</a><a href="?period=30"
+                    class="{% if period == 30 %}is-active{% endif %}">30 дней</a></nav>
+        </div><svg class="chart" viewBox="0 0 600 170" role="img"
+            aria-label="Динамика прослушиваний за {{ period }} дней. Всего {{ chart_total }}. Максимум за день {{ chart_max }}.">
+            <path class="chart-grid" d="M0 20H600M0 85H600M0 150H600"></path>
+            <polyline class="chart-line" points="{{ chart_points }}"></polyline>
+        </svg>
+        <div class="chart-axis">
+            <span>{{ chart_dates.0|date:'d.m' }}</span><span>{{ chart_dates|last|date:'d.m' }}</span>
+        </div>
+
+        {% if not chart_total %}
+        <p class="helptext">Первые прослушивания появятся после 30 секунд воспроизведения.</p>
+
+        {% endif %}
+
+    </section>
+    <section class="panel">
+        <h2>Топ-5 треков</h2>
         {% for track in top_tracks %}
-            <div class="dashboard-track"><span class="track-rank">{{ forloop.counter }}</span><strong>{{ track.title }}</strong><span class="muted">{{ track.plays_count }} прослушиваний</span><a class="secondary-action" href="{% url 'edit_track' track.id %}">Изменить</a></div>
-        {% empty %}<p class="muted">Загрузите первый трек, чтобы увидеть статистику.</p>{% endfor %}
-    </div>
-</section>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-new Chart(document.getElementById('plays-chart'), {
-    type: 'line',
-    data: {
-        labels: {{ chart_labels|safe }},
-        datasets: [{label: 'Прослушивания за 30 дней', data: {{ chart_values|safe }}, borderColor: '#ff5000', backgroundColor: 'rgba(255,80,0,.15)', fill: true, tension: .3}]
-    },
-    options: {responsive: true, maintainAspectRatio: false, scales: {y: {beginAtZero: true, ticks: {precision: 0}}}}
-});
-</script>
+        <a class="ranking-row"
+            href="{{ track.get_absolute_url }}"><span>{{ forloop.counter }}</span><strong>{{ track.title }}</strong><small>{{ track.plays_count }}
+                прослушиваний</small></a>
+        {% empty %}
+        <p class="muted">Загрузи первый трек, чтобы начать.</p>
+        {% endfor %}
+
+    </section>
+</div>
+<div class="section-head">
+    <h2>Мои треки</h2>
+</div>
+{% for track in tracks %}
+<div class="management-row">
+    <div><a href="{{ track.get_absolute_url }}"><strong>{{ track.title }}</strong></a><small>{{ track.get_genre_display }}
+            · {{ track.plays_count }} прослушиваний</small></div>
+    {% include 'includes/status.html' with item=track %}
+    <a class="btn btn-ghost" href="{% url 'edit_track' track.id %}">Изменить</a>
+</div>
+{% empty %}
+<div class="empty-state">
+    <h2>Первая публикация начинается здесь</h2>
+    <p>Загрузи трек и отправь его на проверку.</p>
+</div>
+{% endfor %}
+
+<div class="section-head">
+    <h2>Мои релизы</h2>
+</div>
+{% for album in albums %}
+<div class="management-row">
+    <div><a href="{{ album.get_absolute_url }}"><strong>{{ album.title }}</strong></a><small>{{ album.get_release_type_display }}
+            · {{ album.track_count }} треков</small></div>
+    {% include 'includes/status.html' with item=album %}
+    <a class="btn btn-ghost" href="{% url 'edit_release' album.id %}">Изменить</a>
+</div>
+{% empty %}
+<p class="muted">Собери свои треки в первый релиз.</p>
+{% endfor %}
+
 {% endblock %}
