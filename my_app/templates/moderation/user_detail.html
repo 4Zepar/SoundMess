@@ -61,7 +61,7 @@
 
     </section>
     <section class="panel">
-        <h2>Демо-баланс: {{ wallet.balance_usd|floatformat:2 }} USD</h2>
+        <h2>Баланс: {{ wallet.balance_usd|floatformat:2 }} USD</h2>
         <form method="post" action="{% url 'adjust_user_balance' account.id %}">
 
             {% csrf_token %}

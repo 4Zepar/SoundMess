@@ -58,11 +58,11 @@ def payment_page(request, artist=None):
                         user=request.user,
                         amount_cents=cents,
                         operation_key=claims['nonce'],
-                        description='Демонстрационное пополнение'
+                        description='Пополнение кошелька'
                     )
                 messages.success(
                     request,
-                    'Поддержка отправлена. Спасибо!' if artist else 'Демонстрационный баланс пополнен.'
+                    'Поддержка отправлена. Спасибо!' if artist else 'Баланс пополнен.'
                 )
                 return redirect(
                     'support_artist',

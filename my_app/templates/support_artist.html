@@ -15,7 +15,7 @@
     </div>
     <div class="wallet-summary">
         <div>
-            <p class="eyebrow">Твой демо-баланс</p><strong>{{ wallet.balance_usd|floatformat:2 }} <span
+            <p class="eyebrow">Твой баланс</p><strong>{{ wallet.balance_usd|floatformat:2 }} <span
                     class="muted">USD</span></strong>
         </div><a class="btn btn-secondary" href="{% url 'wallet_top_up' %}">Пополнить</a>
     </div>
@@ -32,7 +32,7 @@
             {{ form.non_field_errors }}
             {% if confirmation %}
             <p class="confirmation-amount">{{ confirmation_amount }} <span class="muted">USD</span></p>
-            <p class="muted">Эта сумма будет переведена {{ artist.user.username }} с твоего демонстрационного баланса.
+            <p class="muted">Эта сумма будет переведена {{ artist.user.username }} с твоего баланса.
             </p>{{ form.amount.as_hidden }}<input type="hidden" name="confirm" value="yes">{{ form.token }}
             {% else %}
 
@@ -53,7 +53,7 @@
                     {% endif %}
                 </button><a class="btn btn-ghost" href="{{ artist.get_absolute_url }}">Отмена</a></div>
         </form>
-        <p class="demo-notice">Демонстрационная операция с виртуальными деньгами. Реальная оплата не производится.</p>
+        <p class="wallet-notice">Операция с виртуальными средствами. Реальная оплата не производится.</p>
     </div>
     {% if donations %}
     <div class="section-head">

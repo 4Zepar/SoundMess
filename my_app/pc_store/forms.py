@@ -193,7 +193,7 @@ class PaymentForm(StyledFormMixin, forms.Form):
         max_value=Decimal('100000.00'),
         max_digits=10,
         decimal_places=2,
-        label='Сумма, демо USD',
+        label='Сумма, USD',
         widget=forms.NumberInput(attrs={'step': '0.01', 'inputmode': 'decimal', 'placeholder': '5.00'})
     )
     token = forms.CharField(widget=forms.HiddenInput)
@@ -205,7 +205,7 @@ class BalanceAdjustmentForm(StyledFormMixin, forms.Form):
         decimal_places=2,
         min_value=Decimal('-100000'),
         max_value=Decimal('100000'),
-        label='Изменение баланса, демо USD',
+        label='Изменение баланса, USD',
         widget=forms.NumberInput(attrs={'step': '0.01', 'placeholder': '+10.00 или -5.00'})
     )
     note = forms.CharField(max_length=200, label='Причина')
