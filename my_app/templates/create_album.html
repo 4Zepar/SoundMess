@@ -67,9 +67,24 @@
             {% for field in form %}
 
             {% if field.name == 'tracks' %}
+            {% if public %}
+            <fieldset class="form-field release-track-picker" aria-describedby="release-tracks-help{% if field.errors %} id_tracks_error{% endif %}">
+                <legend>{{ field.label }}</legend>
+                <p class="helptext" id="release-tracks-help">Нажми на плашку, чтобы добавить трек в релиз. Кнопка на обложке — для прослушивания.</p>
+                <div class="release-track-list">
+                    {% for choice in field %}
+                    {% include 'includes/track_choice.html' with track=choice.data.value.instance %}
+                    {% empty %}
+                    <p class="muted">Пока нет треков для релиза. Сначала загрузи свою музыку в кабинете артиста.</p>
+                    {% endfor %}
+                </div>
+                {{ field.errors }}
+            </fieldset>
+            {% else %}
             <div class="form-field"><label>{{ field.label }}</label>
                 <div class="track-choice-list">{{ field }}</div>{{ field.errors }}
             </div>
+            {% endif %}
             {% else %}
 
             {% include 'includes/field.html' %}
