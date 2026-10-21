@@ -53,8 +53,6 @@ def album_editor(request, album_id=None, public=False):
         public=public,
         instance=album
     )
-    if public:
-        form.fields['tracks'].queryset = track_cards(request.user, form.fields['tracks'].queryset)
     if request.method == 'POST' and form.is_valid():
         submit = public and request.POST.get('intent') == 'submit'
         try:

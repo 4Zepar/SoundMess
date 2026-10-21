@@ -203,7 +203,6 @@ class AlbumForm(StyledFormMixin, forms.ModelForm):
             self.fields.pop('release_type')
             self.fields.pop('release_year')
         else:
-            self.fields['tracks'].widget.attrs['class'] = 'checkbox'
             self.fields['release_year'].min_value = 1900
             self.fields['release_year'].max_value = timezone.localdate().year + 1
 
