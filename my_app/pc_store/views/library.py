@@ -54,6 +54,9 @@ def album_editor(request, album_id=None, public=False):
         instance=album
     )
     if request.method == 'POST' and form.is_valid():
+        if public and album.pk and album.moderation_status == 'approved' and not form.has_changed():
+            messages.info(request, 'Релиз уже опубликован. Изменений нет — повторная проверка не нужна.')
+            return redirect('artist_dashboard')
         submit = public and request.POST.get('intent') == 'submit'
         try:
             if submit:
@@ -123,10 +126,11 @@ def remove_track_from_album(request):
     )
     track_id = integer(data.get('track_id'), 'Трек', 1)
     with transaction.atomic():
-        album.tracks.remove(track_id)
-        if album.is_public:
-            prepare_submission(album, submit=False)
-            album.save()
+        if album.tracks.filter(pk=track_id).exists():
+            album.tracks.remove(track_id)
+            if album.is_public:
+                prepare_submission(album, submit=False)
+                album.save()
     return JsonResponse({'status': 'removed'})
 
 

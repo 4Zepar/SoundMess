@@ -73,7 +73,13 @@ def track_editor(request, track_id=None):
     track = get_object_or_404(Track, pk=track_id, artist=artist) if track_id else Track(artist=artist)
     form = TrackForm(request.POST or None, request.FILES or None, instance=track)
     if request.method == 'POST' and form.is_valid():
-        submit = request.POST.get('intent') == 'submit'
+        if track.pk and track.moderation_status == 'approved' and not form.has_changed():
+            messages.info(request, 'Трек уже опубликован. Изменений нет — повторная проверка не нужна.')
+            return redirect('artist_dashboard')
+        # Once submitted, artist edits must return to moderation regardless of the button used.
+        submit = request.POST.get('intent') == 'submit' or bool(
+            track.pk and track.moderation_status != 'draft'
+        )
         with transaction.atomic():
             track = form.save(commit=False)
             prepare_submission(track, submit=submit)

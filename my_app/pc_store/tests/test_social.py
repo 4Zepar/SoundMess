@@ -30,6 +30,30 @@ class SocialTests(AppTestCase):
         self.client.post(reverse('add_album_to_favorites', args=[album.pk]))
         self.assertIn(album, self.client.get(reverse('profile')).context['saved_albums'])
 
+    def test_artist_can_save_and_unsave_their_own_published_release(self):
+        album = self.make_album()
+        url = reverse('add_album_to_favorites', args=[album.pk])
+        self.login(self.artist_user)
+        self.assertContains(self.client.get(album.get_absolute_url()), f'action="{url}"')
+        for _ in range(2):
+            self.assertRedirects(self.client.post(url, {'saved': 'true'}), album.get_absolute_url())
+        self.assertEqual(album.saved_by.filter(pk=self.artist_user.pk).count(), 1)
+        self.assertIn(album, self.client.get(reverse('profile')).context['saved_albums'])
+        self.assertFalse(self.track.likes.filter(pk=self.artist_user.pk).exists())
+        self.assertContains(self.client.get(album.get_absolute_url()), 'из медиатеки')
+        self.assertRedirects(self.client.post(url, {'saved': 'false'}), album.get_absolute_url())
+        self.assertNotIn(album, self.client.get(reverse('profile')).context['saved_albums'])
+
+    def test_own_private_or_unpublished_album_cannot_be_saved_as_a_release(self):
+        self.login(self.artist_user)
+        for public, status in ((False, 'draft'), (True, 'draft'), (True, 'pending'), (True, 'hidden')):
+            with self.subTest(public=public, status=status):
+                album = self.make_album(is_public=public, moderation_status=status)
+                url = reverse('add_album_to_favorites', args=[album.pk])
+                self.assertNotContains(self.client.get(album.get_absolute_url()), f'action="{url}"')
+                self.assertEqual(self.client.post(url, {'saved': 'true'}).status_code, 404)
+                self.assertFalse(album.saved_by.exists())
+
     def test_valid_non_object_json_returns_400(self):
         self.login()
         for payload in ['[1]', '1', '"text"', '{broken', '{"number":' + '9' * 5000 + '}']:

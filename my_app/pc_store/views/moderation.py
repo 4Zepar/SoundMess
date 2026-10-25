@@ -164,26 +164,39 @@ def comments(request):
 @moderator_required
 def track_comments(request, track_id):
     track = get_object_or_404(track_cards(request.user, Track.objects.all()), pk=track_id)
-    query = track.comments.select_related(
-        'author', 'parent__author', 'parent__parent__parent',
-    ).order_by('-created_at', '-pk')
+    query = track.comments.filter(parent__isnull=True).select_related('author').order_by('-created_at', '-pk')
     page = Paginator(query, 30).get_page(request.GET.get('page'))
-    for comment in page.object_list:
+    roots = list(page.object_list)
+    comments = list(roots)
+    for comment in roots:
+        comment.depth = 0
         comment.hidden_by_parent = False
-        ancestor = comment.parent
-        while ancestor:
-            if ancestor.is_hidden:
-                comment.hidden_by_parent = True
-                break
-            ancestor = ancestor.parent
+        comment.moderation_replies = []
+    # Fetch one level at a time so complete threads stay together without N+1 queries.
+    level = roots
+    while level:
+        parents = {comment.pk: comment for comment in level}
+        replies = list(track.comments.filter(parent_id__in=parents).select_related('author').order_by('created_at', 'pk'))
+        for reply in replies:
+            parent = parents[reply.parent_id]
+            reply.parent = parent
+            reply.depth = parent.depth + 1
+            reply.hidden_by_parent = parent.is_hidden or parent.hidden_by_parent
+            reply.moderation_replies = []
+            parent.moderation_replies.append(reply)
+        comments.extend(replies)
+        level = replies
+    for comment in reversed(comments):
+        comment.descendant_count = sum(1 + reply.descendant_count for reply in comment.moderation_replies)
     back_query = request.GET.copy()
     list_page = back_query.pop('list_page', None)
     back_query.pop('page', None)
     if list_page:
         back_query['page'] = list_page[-1]
     return render(request, 'moderation/track_comments.html', {
-        'track': track, 'comments': page.object_list, 'page_obj': page,
-        'comment_count': page.paginator.count, 'back_query': back_query.urlencode(),
+        'track': track, 'comments': comments, 'comment_threads': roots, 'page_obj': page,
+        'comment_count': track.comments.count(), 'thread_count': page.paginator.count,
+        'back_query': back_query.urlencode(),
     })
 
 
@@ -203,6 +216,29 @@ def comment_visibility(request, comment_id):
         )
     messages.success(request, 'Видимость комментария изменена.')
     destination = reverse('moderation_track_comments', args=[comment.track_id])
+    if request.GET:
+        destination += '?' + request.GET.urlencode()
+    return redirect(destination)
+
+
+@moderator_required
+@require_POST
+def delete_comment(request, comment_id):
+    with transaction.atomic():
+        comment = get_object_or_404(
+            Comment.objects.select_for_update().select_related('author', 'track'), pk=comment_id,
+        )
+        track_id = comment.track_id
+        author = comment.author.username
+        track_title = comment.track.title
+        _, deleted = comment.delete()
+        count = deleted.get(Comment._meta.label, 0)
+        ModerationAction.objects.create(
+            actor=request.user, target_type='comment', target_id=comment_id, action='deleted',
+            note=f'Автор: {author}. Трек: {track_title}. Удалено комментариев вместе с ответами: {count}.',
+        )
+    messages.success(request, 'Комментарий и ответы удалены.' if count > 1 else 'Комментарий удалён.')
+    destination = reverse('moderation_track_comments', args=[track_id])
     if request.GET:
         destination += '?' + request.GET.urlencode()
     return redirect(destination)

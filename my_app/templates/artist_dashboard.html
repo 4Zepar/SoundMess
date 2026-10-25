@@ -84,15 +84,14 @@
 <div class="section-head">
     <h2>Мои релизы</h2>
 </div>
-{% for album in albums %}
-<div class="management-row">
-    <div><a href="{{ album.get_absolute_url }}"><strong>{{ album.title }}</strong></a><small>{{ album.get_release_type_display }}
-            · {{ album.track_count }} треков</small></div>
-    {% include 'includes/status.html' with item=album %}
-    <a class="btn btn-ghost" href="{% url 'edit_release' album.id %}">Изменить</a>
+{% if albums %}
+<div class="card-grid">
+    {% for album in albums %}
+    {% include 'includes/album_card.html' with show_management=True %}
+    {% endfor %}
 </div>
-{% empty %}
+{% else %}
 <p class="muted">Собери свои треки в первый релиз.</p>
-{% endfor %}
+{% endif %}
 
 {% endblock %}

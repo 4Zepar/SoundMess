@@ -93,10 +93,17 @@
                 {% endwith %}
 
             </div>
+            {% if public and album.moderation_status == 'approved' %}
+            <p class="helptext">Релиз уже опубликован. Повторная проверка потребуется только после изменения его данных или состава.</p>
+            {% endif %}
             <div class="button-row">
                 {% if public %}
+                {% if album.moderation_status == 'approved' %}
+                <button class="btn" type="submit" name="intent" value="submit">Сохранить изменения</button>
+                {% else %}
                 <button class="btn" type="submit" name="intent" value="submit">Отправить на проверку</button><button
                     class="btn btn-secondary" type="submit" name="intent" value="draft">Сохранить черновик</button>
+                {% endif %}
                 {% else %}
                 <button class="btn" type="submit">Сохранить плейлист</button>
                 {% endif %}

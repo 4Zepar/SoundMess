@@ -15,4 +15,10 @@
     </a>
     <a class="music-card-title" href="{{ album.get_absolute_url }}">{{ album.title }}</a>
     <p class="music-card-caption">{{ album.owner.username }} · {{ album.track_count|default:0 }} треков</p>
+    {% if show_management %}
+    <div class="music-card-management">
+        {% include 'includes/status.html' with item=album %}
+        <a class="btn btn-ghost" href="{% url 'edit_release' album.id %}">Изменить</a>
+    </div>
+    {% endif %}
 </article>

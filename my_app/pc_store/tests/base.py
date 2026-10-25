@@ -7,6 +7,7 @@ from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from PIL import Image
 
 from pc_store.models import Album, Artist, Track
 
@@ -19,6 +20,13 @@ def audio_upload(name='sample.wav', seconds=2):
         audio.setframerate(8000)
         audio.writeframes(b'\x00\x00' * 8000 * seconds)
     return SimpleUploadedFile(name, stream.getvalue(), content_type='audio/wav')
+
+
+def cover_upload(name='cover.png'):
+    stream = io.BytesIO()
+    with Image.new('RGB', (2, 2), color=(255, 98, 15)) as cover:
+        cover.save(stream, format='PNG')
+    return SimpleUploadedFile(name, stream.getvalue(), content_type='image/png')
 
 
 class AppTestCase(TestCase):

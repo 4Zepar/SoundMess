@@ -1,9 +1,26 @@
 from django.urls import reverse
 
-from .base import AppTestCase
+from .base import AppTestCase, cover_upload
 
 
 class CatalogTests(AppTestCase):
+    def test_artist_release_covers_use_catalog_cards_in_profile_and_dashboard(self):
+        album = self.make_album(cover=cover_upload())
+        draft = self.make_album(title='Unpublished release', moderation_status='draft', cover=cover_upload('draft.png'))
+        response = self.client.get(reverse('artist_detail', args=[self.artist.pk]))
+        self.assertTemplateUsed(response, 'includes/album_card.html')
+        self.assertContains(response, f'src="{album.cover.url}"')
+        self.assertNotContains(response, draft.title)
+
+        self.login(self.artist_user)
+        response = self.client.get(reverse('artist_dashboard'))
+        self.assertTemplateUsed(response, 'includes/album_card.html')
+        self.assertContains(response, f'src="{album.cover.url}"')
+        self.assertContains(response, f'src="{draft.cover.url}"')
+        self.assertContains(response, f'href="{reverse("edit_release", args=[album.pk])}"')
+        self.assertContains(response, 'badge-approved')
+        self.assertContains(response, 'badge-draft')
+
     def test_multiple_filters_apply_together(self):
         wanted = self.make_track(
             title='Wanted song',

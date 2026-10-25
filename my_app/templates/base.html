@@ -48,6 +48,7 @@
                     {% include 'includes/nav_link.html' with name='wallet_top_up' label='Кошелёк' icon='wallet' %}
 
                 </div>
+                {% if not can_manage_users or current_artist.moderation_status == 'approved' %}
                 <div class="nav-section"><span class="nav-label">Для артистов</span>
 
                     {% if current_artist.moderation_status == 'approved' %}
@@ -63,6 +64,7 @@
                     {% endif %}
 
                 </div>
+                {% endif %}
 
                 {% if can_moderate %}
                 <div class="nav-section"><span class="nav-label">Управление</span>
@@ -122,7 +124,9 @@
 
                         </summary>
                         <div class="dropdown"><a href="{% url 'profile' %}">Медиатека</a><a
-                                href="{% url 'profile_edit' %}">Настройки профиля</a><a
+                                href="{% url 'profile_edit' %}">Настройки профиля</a>
+                            {% if not can_manage_users %}
+                            <a
                                 href="{% url 'artist_application' %}">
                                 {% if current_artist %}
                                 Заявка
@@ -131,6 +135,7 @@
                                 Стать артистом
                                 {% endif %}
                             </a>
+                            {% endif %}
                             {% if can_moderate %}
                             <a href="{% url 'moderation_dashboard' %}">Модерация</a>
                             {% endif %}
@@ -190,6 +195,12 @@
     </div>
     <section class="player is-empty" id="player-bar" aria-label="Аудиоплеер">
         <audio id="main-player" preload="metadata"></audio>
+        <div class="player-timeline">
+            <div class="player-time-labels" aria-hidden="true"><span id="current-time">0:00</span><span
+                    id="total-time">0:00</span></div>
+            <input id="progress-bar" type="range" min="0" max="0" value="0" step="0.1" disabled
+                aria-label="Позиция воспроизведения" aria-valuetext="0:00 из 0:00">
+        </div>
         <div class="player-info">
             <div class="player-art"><img id="player-cover" alt="" hidden><span id="player-cover-placeholder">
                     {% include 'includes/icon.html' with name='music' %}
@@ -197,10 +208,6 @@
             <div class="track-info"><a class="player-title" id="player-track-title">Выберите трек</a>
                 <p class="player-artist" id="player-track-artist">Музыка начнётся здесь</p>
             </div>
-            <button class="icon-button" id="player-like" data-like-id="" disabled aria-label="Добавить в любимое"
-                aria-pressed="false">
-                {% include 'includes/icon.html' with name='heart' %}
-            </button>
         </div>
         <div class="player-center">
             <div class="player-controls">
@@ -215,15 +222,18 @@
                     {% include 'includes/icon.html' with name='next' %}
                 </button>
             </div>
-            <div class="player-timeline"><span id="current-time">0:00</span><input id="progress-bar" type="range"
-                    min="0" max="0" value="0" step="0.1" disabled aria-label="Позиция воспроизведения"><span
-                    id="total-time">0:00</span></div>
+            <div class="player-secondary-controls">
+                <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
+                    title="Повторять текущий трек" aria-pressed="false">
+                    {% include 'includes/icon.html' with name='repeat' %}
+                </button>
+                <button class="icon-button" id="player-like" data-like-id="" disabled aria-label="Добавить в любимое"
+                    aria-pressed="false">
+                    {% include 'includes/icon.html' with name='heart' %}
+                </button>
+            </div>
         </div>
         <div class="player-tools">
-            <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
-                title="Повторять текущий трек" aria-pressed="false">
-                {% include 'includes/icon.html' with name='repeat' %}
-            </button>
             <div class="player-volume"><button class="icon-button" id="player-mute" aria-label="Выключить звук">
                 {% include 'includes/icon.html' with name='volume' %}
             </button><input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8"

@@ -72,6 +72,33 @@ class AccessTests(AppTestCase):
             200
         )
 
+    def test_administrators_are_not_offered_an_artist_application(self):
+        superuser = get_user_model().objects.create_user(
+            username='super-administrator', is_superuser=True, is_staff=True,
+        )
+        for user in (self.administrator, superuser):
+            with self.subTest(user=user.username):
+                self.login(user)
+                response = self.client.get(reverse('home'))
+                self.assertNotContains(response, f'href="{reverse("artist_application")}"')
+                self.assertNotContains(response, 'Для артистов')
+                self.assertContains(response, f'href="{reverse("moderation_dashboard")}"')
+
+    def test_listeners_and_moderators_keep_artist_application_links(self):
+        for user in (self.listener, self.moderator):
+            with self.subTest(user=user.username):
+                self.login(user)
+                response = self.client.get(reverse('home'))
+                self.assertContains(response, f'href="{reverse("artist_application")}"', count=2)
+
+    def test_administrator_with_approved_artist_keeps_artist_tools(self):
+        self.artist_user.groups.add(*self.administrator.groups.all())
+        self.login(self.artist_user)
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, f'href="{reverse("artist_dashboard")}"')
+        self.assertContains(response, f'href="{reverse("upload_track")}"')
+        self.assertNotContains(response, f'href="{reverse("artist_application")}"')
+
     def test_staff_flag_alone_does_not_grant_moderation(self):
         user = get_user_model().objects.create_user(username='unprivileged-staff', is_staff=True)
         self.login(user)

@@ -147,6 +147,7 @@ export class Player {
         this.audio.src = metadata.url;
         this.audio.dataset.trackId = metadata.id;
         this.renderMetadata();
+        this.updateProgress();
         this.play();
         this.save();
         if (metadata.countable && document.getElementById('app-shell').dataset.authenticated === 'true') {
@@ -282,11 +283,17 @@ export class Player {
     }
 
     updateProgress() {
-        const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : this.current?.duration || 0;
+        const fallback = Number(this.current?.duration);
+        const duration = Number.isFinite(this.audio.duration) && this.audio.duration > 0 ? this.audio.duration
+            : Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+        const position = Math.min(duration, Math.max(0, this.audio.currentTime || 0));
+        const percentage = duration ? position / duration * 100 : 0;
         this.progress.max = duration;
-        this.progress.value = this.audio.currentTime || 0;
+        this.progress.value = position;
         this.progress.disabled = !duration;
-        document.getElementById('current-time').textContent = formatTime(this.audio.currentTime);
+        this.progress.setAttribute('aria-valuetext', `${formatTime(position)} из ${formatTime(duration)}`);
+        document.getElementById('player-bar').style.setProperty('--playback-progress', `${percentage}%`);
+        document.getElementById('current-time').textContent = formatTime(position);
         document.getElementById('total-time').textContent = formatTime(duration);
         const now = performance.now();
         this.session?.observe(this.audio.currentTime, { now, playing: !this.audio.paused, seeking: this.audio.seeking });

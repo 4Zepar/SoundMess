@@ -11,6 +11,7 @@ def action_label(value):
         'rejected': 'Отклонено',
         'hidden': 'Скрыто',
         'restored': 'Восстановлено',
+        'deleted': 'Удалено',
         'balance_adjustment': 'Корректировка баланса',
         'active': 'Доступ к аккаунту',
         'role': 'Права доступа'

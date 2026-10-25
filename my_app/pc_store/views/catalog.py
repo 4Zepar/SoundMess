@@ -78,6 +78,7 @@ def album_detail(request, album_id):
     return render(request, 'album_detail.html', {
         'album': album, 'tracks': track_cards(request.user, tracks),
         'is_saved': request.user.is_authenticated and album.saved_by.filter(pk=request.user.pk).exists(),
+        'can_save_album': album.is_public and Album.objects.published().filter(pk=album.pk).exists(),
     })
 
 

@@ -13,3 +13,5 @@ htmlcov/
 node_modules/
 test-results/
 playwright-report/
+/ARCHITECTURE.md
+/tests/frontend/

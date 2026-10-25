@@ -1,0 +1,45 @@
+{% load music %}
+<article class="moderation-comment" id="comment-{{ comment.id }}" tabindex="-1"
+    data-comment-id="{{ comment.id }}" data-parent-id="{{ comment.parent_id|default:'' }}" data-depth="{{ comment.depth }}">
+    <div class="moderation-comment-head">
+        <div>
+            <p class="moderation-comment-kind">{% if comment.parent_id %}Ответ{% else %}Начало ветки{% endif %} · #{{ comment.id }}</p>
+            <h3>{{ comment.author.username }}</h3>
+            <p class="moderation-comment-meta"><time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:'d.m.Y H:i' }}</time>
+                · {{ comment.timestamp_seconds|duration }}
+                {% if comment.descendant_count %} · Ответов: {{ comment.descendant_count }}{% endif %}</p>
+        </div>
+        <span class="badge {% if comment.is_hidden or comment.hidden_by_parent %}badge-hidden{% else %}badge-approved{% endif %}">
+            {% if comment.is_hidden %}Скрыт{% elif comment.hidden_by_parent %}Скрыт вместе с веткой{% else %}Виден{% endif %}
+        </span>
+    </div>
+    {% if comment.parent_id %}
+    <blockquote class="moderation-parent-preview">
+        <a href="#comment-{{ comment.parent_id }}">В ответ {{ comment.parent.author.username }} · #{{ comment.parent_id }}</a>
+        <p>{{ comment.parent.text|truncatechars:160 }}</p>
+    </blockquote>
+    {% endif %}
+    <p class="moderation-comment-text">{{ comment.text }}</p>
+    {% if comment.hidden_by_parent and not comment.is_hidden %}
+    <p class="helptext">Чтобы вернуть этот ответ в публичное обсуждение, восстановите родительский комментарий.</p>
+    {% endif %}
+    <div class="button-row moderation-comment-actions">
+        <form method="post" action="{% url 'toggle_comment_visibility' comment.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="hidden" value="{{ comment.is_hidden|yesno:'false,true' }}">
+            <button class="btn btn-secondary" type="submit">{% if comment.is_hidden %}Восстановить{% else %}Скрыть{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'delete_moderated_comment' comment.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+            data-confirm="Удалить комментарий #{{ comment.id }}{% if comment.descendant_count %} и все ответы на него ({{ comment.descendant_count }}){% endif %}? Это действие нельзя отменить.">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">{% include 'includes/icon.html' with name='trash' small=True %} Удалить</button>
+        </form>
+    </div>
+</article>
+{% if comment.moderation_replies %}
+<ol class="moderation-replies" aria-label="Ответы на комментарий #{{ comment.id }}">
+    {% for reply in comment.moderation_replies %}
+    <li>{% include 'moderation/comment_node.html' with comment=reply %}</li>
+    {% endfor %}
+</ol>
+{% endif %}

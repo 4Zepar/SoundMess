@@ -24,12 +24,8 @@
 
     {% if track.pk %}
     <p class="alert alert-info">
-        {{ track.get_moderation_status_display }}
-        {% if track.moderation_note %}
-        : {{ track.moderation_note }}
+        {{ track.get_moderation_status_display }}{% if track.moderation_status == 'rejected' or track.moderation_status == 'hidden' %}{% if track.moderation_note %}: {{ track.moderation_note }}{% endif %}
         {% endif %}
-        .
-        Изменённый трек проходит повторную проверку.
     </p>
     {% endif %}
 
@@ -74,9 +70,18 @@
 
             {% endfor %}
 
-            <div class="button-row"><button class="btn" type="submit" name="intent" value="submit">Отправить на
+            {% if track.pk and track.moderation_status != 'draft' %}
+            <p class="helptext">Любые изменения трека, включая название, обложку, аудио и текст, требуют одобрения модератора. После сохранения изменённый трек будет на проверке и станет доступен слушателям после одобрения.</p>
+            {% endif %}
+            <div class="button-row">
+                {% if track.pk and track.moderation_status != 'draft' %}
+                <button class="btn" type="submit" name="intent" value="submit">Отправить изменения на проверку</button>
+                {% else %}
+                <button class="btn" type="submit" name="intent" value="submit">Отправить на
                     проверку</button><button class="btn btn-secondary" type="submit" name="intent"
-                    value="draft">Сохранить черновик</button><a class="btn btn-ghost"
+                    value="draft">Сохранить черновик</button>
+                {% endif %}
+                <a class="btn btn-ghost"
                     href="{% url 'artist_dashboard' %}">Отмена</a></div>
         </form>
     </div>
