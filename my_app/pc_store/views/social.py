@@ -46,6 +46,7 @@ def toggle_follow(request, artist_id):
         Follow.objects.filter(follower=request.user, artist=artist).exists()
     )
     if following:
+        Follow(follower=request.user, artist=artist).clean()
         Follow.objects.get_or_create(follower=request.user, artist=artist)
     else:
         Follow.objects.filter(follower=request.user, artist=artist).delete()

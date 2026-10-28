@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -125,6 +126,9 @@ class Track(ModeratedContent):
 
     class Meta:
         ordering = ['-published_at', '-pk']
+        indexes = [
+            models.Index(fields=['moderation_status', '-published_at'], name='track_mod_pub_idx'),
+        ]
 
     def __str__(self):
         return f'{self.artist} — {self.title}'
@@ -143,7 +147,7 @@ class Album(ModeratedContent):
     title = models.CharField(max_length=200, verbose_name='Название')
     description = models.TextField(blank=True, max_length=2000, verbose_name='Описание')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='albums')
-    tracks = models.ManyToManyField(Track, related_name='contained_in', blank=True)
+    tracks = models.ManyToManyField(Track, through='AlbumTrack', related_name='contained_in', blank=True)
     is_favorite_folder = models.BooleanField(default=False)
     is_public = models.BooleanField(default=False, verbose_name='Публичный релиз')
     release_type = models.CharField(
@@ -183,9 +187,30 @@ class Follow(models.Model):
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='followers')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        super().clean()
+        if self.artist_id and self.follower_id and Artist.objects.filter(
+            pk=self.artist_id, user_id=self.follower_id,
+        ).exists():
+            raise ValidationError({'follower': 'Нельзя подписаться на самого себя.'})
+
     class Meta:
         ordering = ['-created_at']
         constraints = [models.UniqueConstraint(fields=['follower', 'artist'], name='unique_artist_follow')]
+
+
+class AlbumTrack(models.Model):
+    album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='track_entries')
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='album_entries')
+    position = models.PositiveIntegerField()
+
+    class Meta:
+        db_table = 'pc_store_album_tracks'
+        ordering = ['position']
+        constraints = [
+            models.UniqueConstraint(fields=['album', 'track'], name='uniq_album_track'),
+            models.UniqueConstraint(fields=['album', 'position'], name='uniq_album_track_position'),
+        ]
 
 
 class Comment(models.Model):
@@ -218,6 +243,10 @@ class ListeningHistory(models.Model):
 
     class Meta:
         ordering = ['-timestamp', '-pk']
+        indexes = [
+            models.Index(fields=['user', '-timestamp'], name='listenhist_user_ts_idx'),
+            models.Index(fields=['track', 'timestamp'], name='listenhist_track_ts_idx'),
+        ]
 
 
 class PlayEvent(models.Model):
@@ -234,12 +263,21 @@ class PlayEvent(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['track', 'created_at'], name='playevent_track_created_idx'),
+            models.Index(fields=['user', 'created_at'], name='playevent_user_created_idx'),
+        ]
 
 
 class Wallet(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
     balance_cents = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(balance_cents__gte=0), name='wallet_balance_non_negative'),
+        ]
 
     @property
     def balance_usd(self):
@@ -256,7 +294,7 @@ class Donation(models.Model):
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='donations_received')
     amount_cents = models.PositiveIntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='succeeded')
-    idempotency_key = models.CharField(max_length=64, unique=True)
+    idempotency_key = models.CharField(max_length=64)
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -265,18 +303,36 @@ class Donation(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-pk']
+        constraints = [
+            models.UniqueConstraint(fields=['donor', 'idempotency_key'], name='uniq_donor_idempotency_key'),
+            models.CheckConstraint(condition=Q(amount_cents__gt=0), name='donation_amount_positive'),
+        ]
 
 
 class WalletTransaction(models.Model):
+    class Type(models.TextChoices):
+        TOPUP = 'topup', 'Пополнение'
+        DONATION_OUT = 'donation_out', 'Донат (списание)'
+        DONATION_IN = 'donation_in', 'Донат (начисление)'
+        WITHDRAWAL = 'withdrawal', 'Вывод'
+
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    type = models.CharField(max_length=20, choices=Type.choices)
+    donation = models.ForeignKey(
+        Donation, null=True, blank=True, on_delete=models.PROTECT, related_name='transactions',
+    )
     amount_cents = models.IntegerField()
     balance_after_cents = models.PositiveIntegerField()
     description = models.CharField(max_length=200)
-    operation_key = models.CharField(max_length=100, unique=True)
+    operation_key = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at', '-pk']
+        constraints = [
+            models.UniqueConstraint(fields=['wallet', 'operation_key'], name='uniq_wallet_operation_key'),
+            models.CheckConstraint(condition=~Q(amount_cents=0), name='wallettx_amount_non_zero'),
+        ]
 
     @property
     def amount_usd(self):

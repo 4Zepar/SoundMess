@@ -1,9 +1,22 @@
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import F
 from django.utils import timezone
 
 from pc_store.models import Donation, Wallet, WalletTransaction
+
+
+def _lock_wallets(*users):
+    user_ids = sorted({user.pk for user in users})
+    if connection.vendor == 'sqlite':
+        # SQLite has no row locks; acquire its write reservation before reading balances.
+        Wallet.objects.filter(user_id__in=user_ids).update(balance_cents=F('balance_cents'))
+    for user_id in user_ids:
+        Wallet.objects.get_or_create(user_id=user_id)
+    return {
+        wallet.user_id: wallet
+        for wallet in Wallet.objects.select_for_update().filter(user_id__in=user_ids).order_by('pk')
+    }
 
 
 def _change_balance(wallet, amount_cents):
@@ -15,28 +28,36 @@ def _change_balance(wallet, amount_cents):
     wallet.refresh_from_db()
 
 
+def _record_change(wallet, *, amount_cents, operation_key, description, entry_type, donation=None):
+    entry = WalletTransaction.objects.filter(wallet=wallet, operation_key=operation_key).first()
+    if entry:
+        if (entry.amount_cents, entry.type, entry.donation_id) != (
+            amount_cents, entry_type, donation.pk if donation else None,
+        ):
+            raise ValidationError('Параметры операции не совпадают с подтверждёнными.')
+        return entry
+    _change_balance(wallet, amount_cents)
+    return WalletTransaction.objects.create(
+        wallet=wallet, amount_cents=amount_cents, balance_after_cents=wallet.balance_cents,
+        operation_key=operation_key, description=description, type=entry_type, donation=donation,
+    )
+
+
+def _validate_key(key, max_length):
+    if not isinstance(key, str) or not key.strip() or len(key) > max_length:
+        raise ValidationError('Некорректный ключ операции.')
+
+
 @transaction.atomic
 def adjust_balance(*, user, amount_cents, operation_key, description):
     if not amount_cents:
         raise ValidationError('Сумма должна отличаться от нуля.')
-    wallet, _ = Wallet.objects.get_or_create(user=user)
-    entry, created = WalletTransaction.objects.get_or_create(
-        operation_key=operation_key,
-        defaults={
-            'wallet': wallet,
-            'amount_cents': amount_cents,
-            'balance_after_cents': 0,
-            'description': description
-        },
+    _validate_key(operation_key, 100)
+    wallet = _lock_wallets(user)[user.pk]
+    return _record_change(
+        wallet, amount_cents=amount_cents, operation_key=operation_key, description=description,
+        entry_type=WalletTransaction.Type.TOPUP if amount_cents > 0 else WalletTransaction.Type.WITHDRAWAL,
     )
-    if not created:
-        if entry.wallet_id != wallet.pk or entry.amount_cents != amount_cents:
-            raise ValidationError('Параметры операции не совпадают с подтверждёнными.')
-        return entry
-    _change_balance(wallet, amount_cents)
-    entry.balance_after_cents = wallet.balance_cents
-    entry.save(update_fields=['balance_after_cents'])
-    return entry
 
 
 @transaction.atomic
@@ -45,9 +66,11 @@ def donate(*, donor, artist, amount_cents, operation_key):
         raise ValidationError('Нельзя поддержать самого себя.')
     if amount_cents <= 0 or artist.moderation_status != 'approved' or not artist.user.is_active:
         raise ValidationError('Операция недоступна.')
+    _validate_key(operation_key, 64)
+    wallets = _lock_wallets(donor, artist.user)
     donation, created = Donation.objects.get_or_create(
-        idempotency_key=operation_key,
-        defaults={'donor': donor, 'artist': artist, 'amount_cents': amount_cents},
+        donor=donor, idempotency_key=operation_key,
+        defaults={'artist': artist, 'amount_cents': amount_cents},
     )
     if not created:
         if (
@@ -57,16 +80,19 @@ def donate(*, donor, artist, amount_cents, operation_key):
         ) != (donor.pk, artist.pk, amount_cents):
             raise ValidationError('Параметры операции не совпадают с подтверждёнными.')
         return donation
-    adjust_balance(
-        user=donor,
+    ledger_key = f'donation:{donor.pk}:{operation_key}'
+    _record_change(
+        wallets[donor.pk],
         amount_cents=-amount_cents,
-        operation_key=f'{operation_key}:out',
-        description=f'Поддержка {artist.user.username}'
+        operation_key=f'{ledger_key}:out',
+        description=f'Поддержка {artist.user.username}',
+        entry_type=WalletTransaction.Type.DONATION_OUT, donation=donation,
     )
-    adjust_balance(
-        user=artist.user,
+    _record_change(
+        wallets[artist.user_id],
         amount_cents=amount_cents,
-        operation_key=f'{operation_key}:in',
-        description=f'Поддержка от {donor.username}'
+        operation_key=f'{ledger_key}:in',
+        description=f'Поддержка от {donor.username}',
+        entry_type=WalletTransaction.Type.DONATION_IN, donation=donation,
     )
     return donation

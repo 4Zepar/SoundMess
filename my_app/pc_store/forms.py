@@ -206,6 +206,11 @@ class AlbumForm(StyledFormMixin, forms.ModelForm):
             self.fields['release_year'].min_value = 1900
             self.fields['release_year'].max_value = timezone.localdate().year + 1
 
+    def _save_m2m(self):
+        from .services.albums import set_album_tracks
+
+        set_album_tracks(self.instance, self.cleaned_data['tracks'])
+
 
 class PaymentForm(StyledFormMixin, forms.Form):
     amount = forms.DecimalField(

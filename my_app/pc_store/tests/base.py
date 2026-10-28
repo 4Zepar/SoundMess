@@ -10,6 +10,7 @@ from django.utils import timezone
 from PIL import Image
 
 from pc_store.models import Album, Artist, Track
+from pc_store.services.albums import set_album_tracks
 
 
 def audio_upload(name='sample.wav', seconds=2):
@@ -72,7 +73,7 @@ class AppTestCase(TestCase):
         }
         values.update(kwargs)
         album = Album.objects.create(**values)
-        album.tracks.set(tracks)
+        set_album_tracks(album, tracks)
         return album
 
     def login(self, user=None):

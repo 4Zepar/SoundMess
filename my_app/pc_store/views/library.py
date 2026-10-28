@@ -10,6 +10,7 @@ from pc_store.forms import AlbumForm
 from pc_store.http import api_endpoint, integer, json_body
 from pc_store.models import Album, Track
 from pc_store.selectors import album_cards, track_cards
+from pc_store.services.albums import add_album_track
 from pc_store.services.publication import prepare_submission, require_approved_artist, validate_release
 
 
@@ -106,13 +107,12 @@ def add_track_to_album(request):
         if album.release_type == 'single' and album.tracks.exclude(pk=track.pk).exists():
             raise ValidationError('Сингл должен содержать один трек.')
     with transaction.atomic():
-        exists = album.tracks.filter(pk=track.pk).exists()
-        if not exists:
-            album.tracks.add(track)
+        added = add_album_track(album, track)
+        if added:
             if album.is_public:
                 prepare_submission(album, submit=True)
                 album.save()
-    return JsonResponse({'status': 'exists' if exists else 'added'})
+    return JsonResponse({'status': 'added' if added else 'exists'})
 
 
 @api_endpoint()

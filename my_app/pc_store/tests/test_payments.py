@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from unittest.mock import patch
 
 from pc_store.models import Donation, Wallet, WalletTransaction
 from pc_store.services.payments import adjust_balance, donate
@@ -27,6 +28,12 @@ class PaymentTests(AppTestCase):
         self.assertEqual(donation.amount_cents, 500)
         self.assertEqual(Wallet.objects.get(user=self.listener).balance_cents, 500)
         self.assertEqual(Wallet.objects.get(user=self.artist_user).balance_cents, 500)
+        entries = list(donation.transactions.order_by('amount_cents'))
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(
+            [(entry.wallet.user_id, entry.type, entry.amount_cents, entry.balance_after_cents) for entry in entries],
+            [(self.listener.pk, 'donation_out', -500, 500), (self.artist_user.pk, 'donation_in', 500, 500)],
+        )
         self.assertEqual(
             sum(
                 WalletTransaction.objects.filter(
@@ -46,6 +53,7 @@ class PaymentTests(AppTestCase):
             )
         self.assertEqual(Donation.objects.count(), 1)
         self.assertEqual(Wallet.objects.get(user=self.listener).balance_cents, 500)
+        self.assertEqual(Donation.objects.get().transactions.count(), 2)
 
     def test_insufficient_balance_rolls_back_entire_transfer(self):
         with self.assertRaises(ValidationError):
@@ -99,3 +107,42 @@ class PaymentTests(AppTestCase):
                 description='Adjustment'
             )
         self.assertEqual(Wallet.objects.get(user=self.listener).balance_cents, 1100)
+
+    def test_topup_and_withdrawal_have_explicit_types(self):
+        entry = adjust_balance(user=self.listener, amount_cents=-100, operation_key='withdraw', description='Adjustment')
+        self.assertEqual(entry.type, WalletTransaction.Type.WITHDRAWAL)
+        self.assertIsNone(entry.donation_id)
+        self.assertEqual(WalletTransaction.objects.get(operation_key='initial').type, WalletTransaction.Type.TOPUP)
+
+    def test_failed_recipient_entry_rolls_back_donation_both_balances_and_ledger(self):
+        original_create = WalletTransaction.objects.create
+
+        def fail_incoming(**kwargs):
+            if kwargs['type'] == WalletTransaction.Type.DONATION_IN:
+                raise RuntimeError('Incoming ledger failure')
+            return original_create(**kwargs)
+
+        with patch.object(WalletTransaction.objects, 'create', side_effect=fail_incoming):
+            with self.assertRaisesMessage(RuntimeError, 'Incoming ledger failure'):
+                donate(donor=self.listener, artist=self.artist, amount_cents=100, operation_key='rollback')
+        self.assertFalse(Donation.objects.exists())
+        self.assertEqual(Wallet.objects.get(user=self.listener).balance_cents, 1000)
+        self.assertEqual(Wallet.objects.get(user=self.artist_user).balance_cents, 0)
+        self.assertEqual(WalletTransaction.objects.count(), 1)
+
+    def test_same_key_from_two_donors_does_not_collide_in_artist_wallet(self):
+        adjust_balance(user=self.moderator, amount_cents=1000, operation_key='initial', description='Topup')
+        donations = [donate(donor=donor, artist=self.artist, amount_cents=100, operation_key='shared')
+                     for donor in (self.listener, self.moderator)]
+        self.assertEqual(len({donation.pk for donation in donations}), 2)
+        self.assertEqual(Wallet.objects.get(user=self.artist_user).balance_cents, 200)
+        self.assertTrue(all(donation.transactions.count() == 2 for donation in donations))
+
+    def test_reusing_a_key_with_changed_parameters_is_rejected(self):
+        donate(donor=self.listener, artist=self.artist, amount_cents=100, operation_key='bound')
+        with self.assertRaises(ValidationError):
+            donate(donor=self.listener, artist=self.artist, amount_cents=200, operation_key='bound')
+        with self.assertRaises(ValidationError):
+            adjust_balance(user=self.listener, amount_cents=2000, operation_key='initial', description='Tampered')
+        self.assertEqual(Wallet.objects.get(user=self.listener).balance_cents, 900)
+        self.assertEqual(Donation.objects.count(), 1)

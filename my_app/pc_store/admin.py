@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Album, Artist, Comment, Donation, Follow, ModerationAction, Profile, Track, Wallet, WalletTransaction
+from .models import Album, AlbumTrack, Artist, Comment, Donation, Follow, ModerationAction, Profile, Track, Wallet, WalletTransaction
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -17,10 +17,17 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'role']
     list_filter = ['role']
 
+class AlbumTrackInline(admin.TabularInline):
+    model = AlbumTrack
+    extra = 0
+    autocomplete_fields = ['track']
+
+
 @admin.register(Album)
 class AlbumAdmin(admin.ModelAdmin):
     list_display = ['title', 'owner', 'is_public', 'is_favorite_folder']
     list_filter = ['is_public', 'is_favorite_folder']
+    inlines = [AlbumTrackInline]
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
@@ -64,7 +71,8 @@ class DonationAdmin(ReadOnlyAdmin):
 
 @admin.register(WalletTransaction)
 class WalletTransactionAdmin(ReadOnlyAdmin):
-    list_display = ['wallet', 'amount_cents', 'balance_after_cents', 'created_at']
+    list_display = ['wallet', 'type', 'donation', 'amount_cents', 'balance_after_cents', 'created_at']
+    list_filter = ['type']
     search_fields = ['wallet__user__username', 'operation_key']
 
 

@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from pc_store.models import Album, Artist, Comment, Follow, PlayEvent, Track
 from pc_store.services.payments import adjust_balance
+from pc_store.services.albums import set_album_tracks
 
 
 def sample_audio(frequency):
@@ -131,14 +132,14 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                album.tracks.set(track for track in tracks if track.artist_id == artist.pk)
+                set_album_tracks(album, (track for track in tracks if track.artist_id == artist.pk))
         playlist, created = Album.objects.get_or_create(
             owner=listener,
             title='[Демо] Моя подборка',
             is_public=False
         )
         if created:
-            playlist.tracks.set(tracks[:3])
+            set_album_tracks(playlist, tracks[:3])
         tracks[0].likes.add(listener)
         Comment.objects.get_or_create(
             author=listener, track=tracks[0], text='Тестовый комментарий с таймкодом.',

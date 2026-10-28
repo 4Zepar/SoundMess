@@ -74,7 +74,9 @@ def album_detail(request, album_id):
     if album.is_favorite_folder:
         tracks = Track.objects.visible_to(request.user).filter(likes=album.owner)
     else:
-        tracks = Track.objects.visible_to(request.user).filter(contained_in=album)
+        tracks = Track.objects.visible_to(request.user).filter(
+            album_entries__album=album,
+        ).order_by('album_entries__position', 'pk')
     return render(request, 'album_detail.html', {
         'album': album, 'tracks': track_cards(request.user, tracks),
         'is_saved': request.user.is_authenticated and album.saved_by.filter(pk=request.user.pk).exists(),
