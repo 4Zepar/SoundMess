@@ -56,6 +56,9 @@ def toggle_follow(request, artist_id):
 @login_required
 def feed_view(request):
     followed = request.user.artist_follows.values_list('artist_id', flat=True)
+    followed_artists = Artist.objects.filter(
+        pk__in=followed, moderation_status='approved', user__is_active=True,
+    ).select_related('user__profile').order_by('user__username', 'pk')
     albums = album_cards(Album.objects.published().filter(owner__artist__in=followed))
     tracks = track_cards(
         request.user,
@@ -80,7 +83,9 @@ def feed_view(request):
     )
     entries.sort(key=lambda entry: (entry['date'], entry['item'].pk), reverse=True)
     page = Paginator(entries, 20).get_page(request.GET.get('page'))
-    return render(request, 'feed.html', {'entries': page.object_list, 'page_obj': page})
+    return render(request, 'feed.html', {
+        'entries': page.object_list, 'page_obj': page, 'followed_artists': followed_artists,
+    })
 
 
 @api_endpoint(methods=('GET', 'POST'), authenticated=False)

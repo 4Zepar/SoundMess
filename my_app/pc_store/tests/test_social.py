@@ -1,8 +1,9 @@
 import json
 
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
-from pc_store.models import Comment, Follow, Track
+from pc_store.models import Artist, Comment, Follow, Track
 from .base import AppTestCase
 
 
@@ -132,3 +133,37 @@ class SocialTests(AppTestCase):
             {(entry['kind'], entry['item'].pk) for entry in entries},
             {('album', album.pk), ('track', single.pk)}
         )
+
+    def test_feed_lists_only_current_users_available_followed_artists(self):
+        User = get_user_model()
+        other = Artist.objects.create(user=User.objects.create_user(username='another-artist'), moderation_status='approved')
+        blocked = Artist.objects.create(user=User.objects.create_user(username='blocked-artist', is_active=False), moderation_status='approved')
+        pending = Artist.objects.create(user=User.objects.create_user(username='pending-artist'), moderation_status='pending')
+        for artist in (self.artist, blocked, pending):
+            Follow.objects.create(follower=self.listener, artist=artist)
+        Follow.objects.create(follower=self.moderator, artist=other)
+        self.login()
+        response = self.client.get(reverse('feed'))
+        self.assertEqual(list(response.context['followed_artists']), [self.artist])
+        self.assertContains(response, f'class="followed-artist" href="{self.artist.get_absolute_url()}"')
+        for artist in (other, blocked, pending):
+            self.assertNotContains(response, f'class="followed-artist" href="{artist.get_absolute_url()}"')
+
+    def test_followed_artist_is_listed_even_without_publications(self):
+        self.track.moderation_status = 'draft'
+        self.track.save(update_fields=['moderation_status'])
+        Follow.objects.create(follower=self.listener, artist=self.artist)
+        self.login()
+        response = self.client.get(reverse('feed'))
+        self.assertEqual(list(response.context['followed_artists']), [self.artist])
+        self.assertFalse(response.context['entries'])
+        self.assertContains(response, 'Публикаций пока нет')
+
+    def test_unfollowing_removes_artist_and_their_publications_from_feed(self):
+        Follow.objects.create(follower=self.listener, artist=self.artist)
+        self.login()
+        self.post_json('toggle_follow', {'following': False}, [self.artist.pk])
+        response = self.client.get(reverse('feed'))
+        self.assertFalse(response.context['followed_artists'])
+        self.assertFalse(response.context['entries'])
+        self.assertContains(response, 'Подпишись на артистов')

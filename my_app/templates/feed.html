@@ -15,6 +15,33 @@
     </div><a class="btn btn-ghost" href="{% url 'artist_list' %}">Найти артистов</a>
 </div>
 
+{% if followed_artists %}
+<section aria-labelledby="followed-artists-title">
+    <div class="section-head">
+        <h2 id="followed-artists-title">Артисты <span class="tab-count">{{ followed_artists|length }}</span></h2>
+    </div>
+    <ul class="followed-artists">
+        {% for artist in followed_artists %}
+        <li>
+            <a class="followed-artist" href="{{ artist.get_absolute_url }}">
+                <span class="followed-artist-avatar">
+                    {% with avatar=artist.user.profile.avatar|image_url %}
+                    {% if avatar %}
+                    <img src="{{ avatar }}" alt="" loading="lazy">
+                    {% else %}
+                    <span class="art-placeholder">{{ artist.user.username|first|upper }}</span>
+                    {% endif %}
+                    {% endwith %}
+                </span>
+                <span class="followed-artist-name">{{ artist.user.username }}</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<div class="section-head"><h2>Новые публикации</h2></div>
 {% for entry in entries %}
 <article class="feed-entry">
     <p class="feed-label"><span>
@@ -52,10 +79,15 @@
 {% empty %}
 <div class="empty-state">
     {% include 'includes/icon.html' with name='feed' %}
+    {% if followed_artists %}
+    <h2>Публикаций пока нет</h2>
+    <p>Новые синглы и релизы артистов, на которых ты подписан, появятся здесь.</p>
+    {% else %}
     <h2>Свежая музыка будет
         здесь</h2>
     <p>Подпишись на артистов, чтобы следить за их новыми релизами.</p><a class="btn btn-secondary"
         href="{% url 'artist_list' %}">Открыть артистов</a>
+    {% endif %}
 </div>
 {% endfor %}
 

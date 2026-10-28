@@ -1288,6 +1288,55 @@ input[type=file]::file-selector-button {
     flex-shrink: 0;
 }
 
+.followed-artists {
+    display: flex;
+    gap: 16px;
+    list-style: none;
+    margin: 0 0 32px;
+    padding: 4px 4px 12px;
+    overflow-x: auto;
+}
+
+.followed-artists > li {
+    flex: 0 0 104px;
+    min-width: 0;
+}
+
+.followed-artist {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.followed-artist-avatar {
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--raised);
+}
+
+.followed-artist-avatar img,
+.followed-artist-avatar .art-placeholder {
+    width: 100%;
+    height: 100%;
+}
+
+.followed-artist-name {
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+
+.followed-artist:hover .followed-artist-name {
+    color: var(--accent);
+}
+
 .feed-entry {
     margin-bottom: 32px;
 }
