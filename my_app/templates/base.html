@@ -189,6 +189,10 @@
         </div>
         <div class="player-center">
             <div class="player-controls">
+                <button class="icon-button player-shuffle" id="player-shuffle" aria-label="Перемешать треки"
+                    title="Перемешать треки" aria-pressed="false" disabled>
+                    {% include 'includes/icon.html' with name='shuffle' %}
+                </button>
                 <button class="icon-button player-prev" id="player-prev" aria-label="Предыдущий трек" disabled>
                     {% include 'includes/icon.html' with name='previous' %}
                 </button>
@@ -199,12 +203,12 @@
                 <button class="icon-button" id="player-next" aria-label="Следующий трек" disabled>
                     {% include 'includes/icon.html' with name='next' %}
                 </button>
-            </div>
-            <div class="player-secondary-controls">
                 <button class="icon-button player-repeat" id="player-repeat" aria-label="Повторять текущий трек"
                     title="Повторять текущий трек" aria-pressed="false">
                     {% include 'includes/icon.html' with name='repeat' %}
                 </button>
+            </div>
+            <div class="player-secondary-controls">
                 <button class="icon-button" id="player-like" data-like-id="" disabled aria-label="Добавить в любимое"
                     aria-pressed="false">
                     {% include 'includes/icon.html' with name='heart' %}

@@ -22,10 +22,12 @@ export class Player {
         this.audio = document.getElementById('main-player');
         this.current = null;
         this.queue = [];
+        this.playOrder = [];
         this.session = null;
         this.lastSave = 0;
         this.ended = false;
         this.repeat = false;
+        this.shuffle = false;
         this.pendingSeek = null;
         this.progress = document.getElementById('progress-bar');
         this.bind();
@@ -40,6 +42,7 @@ export class Player {
         document.getElementById('player-toggle').addEventListener('click', () => this.toggle());
         document.getElementById('player-next').addEventListener('click', () => this.next());
         document.getElementById('player-prev').addEventListener('click', () => this.previous());
+        document.getElementById('player-shuffle').addEventListener('click', () => this.toggleShuffle());
         document.getElementById('player-repeat').addEventListener('click', () => this.toggleRepeat());
         this.progress.addEventListener('input', () => {
             this.audio.currentTime = Number(this.progress.value);
@@ -101,7 +104,9 @@ export class Player {
             saved = null;
         }
         this.repeat = saved?.repeat === true;
+        this.shuffle = saved?.shuffle === true;
         this.syncRepeat();
+        this.syncShuffle();
         this.audio.volume = Number.isFinite(saved?.volume) ? Math.max(0, Math.min(1, saved.volume)) : 0.8;
         if (!saved?.track?.id || !saved.track.url) return;
         const url = new URL(saved.track.url, location.origin);
@@ -120,6 +125,7 @@ export class Player {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 track: this.current, position: this.audio.currentTime || 0, volume: this.audio.volume,
                 repeat: this.repeat,
+                shuffle: this.shuffle,
             }));
         } catch {
             // Playback remains available when browser storage is disabled.
@@ -129,9 +135,15 @@ export class Player {
     playFromRow(row) {
         const metadata = trackData(row);
         if (!metadata.url) return;
-        this.queue = [...document.querySelectorAll('.track-row[data-url]')]
+        const queue = [...document.querySelectorAll('.track-row[data-url]')]
             .map(trackData).filter(track => track.url)
             .filter((track, index, all) => all.findIndex(item => item.id === track.id) === index);
+        const sameQueue = queue.length === this.queue.length
+            && queue.every((track, index) => track.id === this.queue[index].id);
+        this.queue = queue;
+        if (!this.shuffle || !sameQueue || this.current?.id !== metadata.id) {
+            this.setPlayOrder(metadata.id);
+        }
         if (this.current?.id === metadata.id) {
             this.toggle();
             return;
@@ -186,6 +198,33 @@ export class Player {
         this.save();
     }
 
+    setPlayOrder(currentId) {
+        this.playOrder = [...this.queue];
+        if (!this.shuffle) return;
+        const current = this.playOrder.findIndex(track => track.id === currentId);
+        if (current < 0) return;
+        const [track] = this.playOrder.splice(current, 1);
+        for (let index = this.playOrder.length - 1; index > 0; index--) {
+            const other = Math.floor(Math.random() * (index + 1));
+            [this.playOrder[index], this.playOrder[other]] = [this.playOrder[other], this.playOrder[index]];
+        }
+        this.playOrder.unshift(track);
+    }
+
+    toggleShuffle() {
+        this.shuffle = !this.shuffle;
+        this.setPlayOrder(this.current?.id);
+        this.sync();
+        this.save();
+    }
+
+    syncShuffle() {
+        const button = document.getElementById('player-shuffle');
+        button.disabled = this.queue.length < 2;
+        button.classList.toggle('is-active', this.shuffle);
+        button.setAttribute('aria-pressed', String(this.shuffle));
+    }
+
     syncRepeat() {
         const button = document.getElementById('player-repeat');
         const label = this.repeat ? 'Отключить повтор трека' : 'Повторять текущий трек';
@@ -203,9 +242,9 @@ export class Player {
     }
 
     next() {
-        const index = this.queue.findIndex(track => track.id === this.current?.id);
-        if (index < 0 || index >= this.queue.length - 1) return false;
-        this.select(this.queue[index + 1]);
+        const index = this.playOrder.findIndex(track => track.id === this.current?.id);
+        if (index < 0 || index >= this.playOrder.length - 1) return false;
+        this.select(this.playOrder[index + 1]);
         return true;
     }
 
@@ -214,8 +253,8 @@ export class Player {
             this.audio.currentTime = 0;
             return;
         }
-        const index = this.queue.findIndex(track => track.id === this.current?.id);
-        if (index > 0) this.select(this.queue[index - 1]);
+        const index = this.playOrder.findIndex(track => track.id === this.current?.id);
+        if (index > 0) this.select(this.playOrder[index - 1]);
     }
 
     seekTo(row, seconds) {
@@ -268,9 +307,10 @@ export class Player {
         button.disabled = !this.current;
         button.setAttribute('aria-label', playing ? 'Пауза' : 'Воспроизвести');
         button.querySelector('use').setAttribute('href', playing ? '#icon-pause' : '#icon-play');
-        const index = this.queue.findIndex(track => track.id === this.current?.id);
+        const index = this.playOrder.findIndex(track => track.id === this.current?.id);
         document.getElementById('player-prev').disabled = !this.current;
-        document.getElementById('player-next').disabled = index < 0 || index >= this.queue.length - 1;
+        document.getElementById('player-next').disabled = index < 0 || index >= this.playOrder.length - 1;
+        this.syncShuffle();
         for (const row of document.querySelectorAll('.track-row[data-track-id]')) {
             const active = row.dataset.trackId === this.current?.id;
             row.classList.toggle('is-playing', active && playing);

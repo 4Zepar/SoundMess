@@ -1853,22 +1853,14 @@ input[type=file]::file-selector-button {
     grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
     align-items: center;
     gap: 20px;
-    background: var(--surface);
+    background-color: var(--surface);
+    background-image: linear-gradient(to right,
+        rgb(255 98 15 / 10%) 0 var(--playback-progress),
+        transparent var(--playback-progress) 100%);
     border: 0;
     border-top: 1px solid var(--border);
     border-radius: 0;
     isolation: isolate;
-}
-
-.player::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    width: var(--playback-progress);
-    border-radius: inherit;
-    background: rgb(255 98 15 / 10%);
-    pointer-events: none;
-    z-index: -1;
 }
 
 .player :focus-visible {
@@ -1992,9 +1984,45 @@ input[type=file]::file-selector-button {
     transition: opacity .15s ease;
 }
 
-.player:hover .player-timeline,
-.player:has(:focus-visible) .player-timeline {
+.player:has(:focus-visible, .player-timeline input:active) .player-timeline {
     opacity: 1;
+}
+
+@media (hover: hover) {
+    .player:hover .player-timeline {
+        opacity: 1;
+    }
+}
+
+.player-timeline::before,
+.player-timeline::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    pointer-events: none;
+}
+
+.player-timeline::before {
+    inset-inline: 0;
+    height: 3px;
+    transform: translateY(-50%);
+    background: linear-gradient(to right,
+        var(--player-accent) 0 var(--playback-progress),
+        rgb(255 255 255 / 24%) var(--playback-progress) 100%);
+}
+
+.player-timeline::after {
+    left: var(--playback-progress);
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--player-accent);
+}
+
+.player-timeline:has(input:focus-visible)::before {
+    outline: 2px solid var(--text);
+    outline-offset: 3px;
 }
 
 .player-time-labels {
@@ -2016,6 +2044,8 @@ input[type=file]::file-selector-button {
 }
 
 .player-timeline input {
+    position: relative;
+    z-index: 1;
     display: block;
     appearance: none;
     -webkit-appearance: none;
@@ -2023,45 +2053,25 @@ input[type=file]::file-selector-button {
     height: 28px;
     padding: 0;
     margin: 0;
-    background: transparent;
-    accent-color: var(--player-accent);
+    opacity: 0;
     cursor: pointer;
 }
 
 .player-timeline input::-webkit-slider-runnable-track {
-    height: 3px;
-    border-radius: 4px;
-    background: linear-gradient(to right, var(--player-accent) var(--playback-progress), rgb(255 255 255 / 24%) var(--playback-progress));
+    height: 28px;
 }
 
 .player-timeline input::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
-    width: 10px;
-    height: 10px;
-    margin-top: -3.5px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--player-accent);
-}
-
-.player-timeline input::-moz-range-track {
-    height: 3px;
-    border-radius: 4px;
-    background: rgb(255 255 255 / 24%);
-}
-
-.player-timeline input::-moz-range-progress {
-    height: 3px;
-    background: var(--player-accent);
+    width: 0;
+    height: 28px;
 }
 
 .player-timeline input::-moz-range-thumb {
-    width: 10px;
-    height: 10px;
+    width: 0;
+    height: 28px;
     border: 0;
-    border-radius: 50%;
-    background: var(--player-accent);
 }
 
 .player-tools {

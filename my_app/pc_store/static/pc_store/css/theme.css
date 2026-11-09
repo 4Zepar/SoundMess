@@ -370,6 +370,11 @@ h1,
     left: calc(100% + 6px);
 }
 
+.player .player-shuffle.is-active {
+    color: var(--accent);
+    background: rgb(255 98 15 / 12%);
+}
+
 @media (max-width: 1150px) {
     .sidebar .brand {
         padding-inline: 4px;
