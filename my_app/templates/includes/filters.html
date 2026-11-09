@@ -10,15 +10,24 @@
     {% if filter_form.search.errors %}
     <div class="errorlist">{{ filter_form.search.errors }}</div>
     {% endif %}
-    <details class="filters" open>
+    <div class="filter-bar">
+        {% for field in filter_form %}
+        {% if field.name == 'genre' or field.name == 'mood' or field.name == 'tempo' or field.name == 'sort' %}
+        <div class="filter-control{% if field.name == 'sort' %} filter-sort{% endif %}">
+            <label class="sr-only" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+            {% for error in field.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <details class="filters" {% if filter_form.errors or filter_form.release_year_from.value or filter_form.release_year_to.value or filter_form.release_type.value or filter_form.duration.value or filter_form.has_lyrics.value or filter_form.explicit.value %}open{% endif %}>
         <summary>
             {% include 'includes/icon.html' with name='filter' small=True %}
-            Фильтры и сортировка</summary>
+            Все фильтры</summary>
         <div class="filters-grid">
 
             {% for field in filter_form %}
 
-            {% if field.name != 'search' and field.name != 'has_lyrics' and field.name != 'explicit' %}
+            {% if field.name == 'release_year_from' or field.name == 'release_year_to' or field.name == 'release_type' or field.name == 'duration' %}
             <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
                 {% for error in field.errors %}
                 <span class="errorlist">{{ error }}</span>
@@ -32,7 +41,8 @@
                     текстом</label><label>{{ filter_form.explicit }} Без цензуры</label><a class="filter-reset"
                     href="{{ request.path }}">Сбросить фильтры</a></div>
         </div>
-    </details>
+        </details>
+    </div>
     {% if filter_form.non_field_errors %}
     <div class="alert alert-error" role="alert">
         {{ filter_form.non_field_errors }}

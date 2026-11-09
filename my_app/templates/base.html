@@ -14,6 +14,7 @@
         {% endblock %}
         · SoundMess</title>
     <link rel="stylesheet" href="{% static 'pc_store/css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'pc_store/css/theme.css' %}">
     <script type="module" src="{% static 'pc_store/js/app.js' %}"></script>
 </head>
 <body data-login-url="{% url 'login' %}">
@@ -24,8 +25,8 @@
     <div class="app-layout" id="app-shell" data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
         data-page="{{ request.resolver_match.url_name }}">
         <aside class="sidebar" aria-label="Основная навигация">
-            <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная"><span class="brand-mark"
-                    aria-hidden="true"><i></i><i></i><i></i></span>SoundMess</a>
+            <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная">
+                <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}" alt="">SoundMess</a>
             <nav>
                 <div class="nav-section"><span class="nav-label">Открывай новое</span>
 
@@ -93,67 +94,16 @@
                             профиль</small></span></a>
 
                 {% else %}
-                <p class="muted">Любимые треки всегда рядом</p><a class="btn btn-secondary" href="{% url 'login' %}"
-                    >Войти в аккаунт</a>
+                <div class="sidebar-auth">
+                    <a class="btn btn-secondary" href="{% url 'login' %}">Войти</a>
+                    <a class="btn btn-ghost" href="{% url 'register' %}">Регистрация</a>
+                </div>
                 {% endif %}
 
             </div>
         </aside>
         <div class="workspace">
-            <header class="topbar">
-                <a class="brand mobile-brand" href="{% url 'home' %}"><span class="brand-mark"
-                        aria-hidden="true"><i></i><i></i><i></i></span>SoundMess</a>
-                <div class="topbar-caption">SoundMess <span>/</span> <strong>Твоё пространство музыки</strong></div>
-                <div class="topbar-actions">
-
-                    {% if user.is_authenticated %}
-
-                    <details class="account-menu">
-                        <summary><span class="avatar">
-                                {% with avatar=user.profile.avatar|image_url %}
-
-                                {% if avatar %}
-                                <img src="{{ avatar }}" alt="">
-                                {% else %}
-                                {{ user.username|first|upper }}
-                                {% endif %}
-
-                                {% endwith %}
-                            </span><span class="account-name">{{ user.username }}</span>
-                            {% include 'includes/icon.html' with name='chevron' small=True %}
-
-                        </summary>
-                        <div class="dropdown"><a href="{% url 'profile' %}">Медиатека</a><a
-                                href="{% url 'profile_edit' %}">Настройки профиля</a>
-                            {% if not can_manage_users %}
-                            <a
-                                href="{% url 'artist_application' %}">
-                                {% if current_artist %}
-                                Заявка
-                                артиста
-                                {% else %}
-                                Стать артистом
-                                {% endif %}
-                            </a>
-                            {% endif %}
-                            {% if can_moderate %}
-                            <a href="{% url 'moderation_dashboard' %}">Модерация</a>
-                            {% endif %}
-                            <form method="post" action="{% url 'logout' %}">
-                                {% csrf_token %}
-                                <button type="submit">Выйти</button>
-                            </form>
-                        </div>
-                    </details>
-
-                    {% else %}
-                    <a class="btn btn-ghost" href="{% url 'login' %}">Войти</a><a class="btn btn-secondary"
-                        href="{% url 'register' %}">Регистрация</a>
-                    {% endif %}
-
-                </div>
-            </header>
-            <main class="main-content" id="main-content" tabindex="-1">
+            <main class="main-content {% block surface_class %}page-surface{% endblock %}" id="main-content" tabindex="-1">
 
                 {% if messages %}
                 <div class="messages" aria-live="polite">
@@ -190,6 +140,31 @@
                 aria-current="page" {% endif %}>
                 {% include 'includes/icon.html' with name='library' %}
                 Медиатека</a>
+            <details class="mobile-more">
+                <summary>
+                    {% include 'includes/icon.html' with name='more' %}
+                    Ещё
+                </summary>
+                <div class="mobile-more-menu">
+                    <a href="{% url 'artist_list' %}">Артисты</a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'profile_edit' %}">Настройки профиля</a>
+                    <a href="{% url 'wallet_top_up' %}">Кошелёк</a>
+                    {% if current_artist.moderation_status == 'approved' %}
+                    <a href="{% url 'artist_dashboard' %}">Кабинет артиста</a>
+                    <a href="{% url 'upload_track' %}">Загрузить трек</a>
+                    {% elif not can_manage_users %}
+                    <a href="{% url 'artist_application' %}">Стать артистом</a>
+                    {% endif %}
+                    {% if can_moderate %}
+                    <a href="{% url 'moderation_dashboard' %}">Модерация</a>
+                    {% endif %}
+                    {% else %}
+                    <a href="{% url 'login' %}">Войти</a>
+                    <a href="{% url 'register' %}">Регистрация</a>
+                    {% endif %}
+                </div>
+            </details>
         </nav>
         {{ playlist_options|json_script:"playlist-options" }}
     </div>

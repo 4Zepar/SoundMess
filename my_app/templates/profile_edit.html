@@ -45,5 +45,11 @@
                     href="{% url 'profile' %}">Отмена</a></div>
         </form>
     </div>
+    <div class="panel profile-sign-out">
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="btn btn-ghost" type="submit">Выйти из аккаунта</button>
+        </form>
+    </div>
 </section>
 {% endblock %}

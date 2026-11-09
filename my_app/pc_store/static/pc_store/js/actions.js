@@ -82,9 +82,8 @@ export class Actions {
             }
             const row = target.closest('.track-row');
             if (row && !target.closest('a, button, input, form, select')) this.player.playFromRow(row);
-            if (!target.closest('.account-menu')) {
-                document.querySelectorAll('.account-menu[open]').forEach(menu => { menu.open = false; });
-            }
+            const menu = document.querySelector('.mobile-more[open]');
+            if (menu && !menu.contains(target)) menu.open = false;
         } catch (error) {
             this.handleError(error);
         }
@@ -183,6 +182,12 @@ export class Actions {
     }
 
     onKeyDown(event) {
+        const menu = event.target.closest('.mobile-more[open]');
+        if (menu && event.key === 'Escape') {
+            menu.open = false;
+            menu.querySelector('summary').focus();
+            return;
+        }
         const tab = event.target.closest('[data-tab]');
         if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
         event.preventDefault();

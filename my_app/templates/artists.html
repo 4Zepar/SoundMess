@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load music %}
+{% block surface_class %}{% endblock %}
 
 {% block title %}
 Артисты
@@ -8,10 +9,11 @@
 
 {% block content %}
 
+<section class="surface-section catalog-intro" aria-labelledby="catalog-title">
 <div class="page-head">
     <div>
         <p class="eyebrow">За каждой музыкой — человек</p>
-        <h1>Артисты</h1>
+        <h1 id="catalog-title">Артисты</h1>
         <p>Найди свой звук. Подпишись, чтобы первым услышать новое.</p>
     </div>
 </div>
@@ -25,7 +27,9 @@
             value="{{ search }}" maxlength="200" placeholder="Найти артиста">
     </div><button class="btn btn-secondary">Найти</button>
 </form>
+</section>
 
+<section class="surface-section surface-results" aria-label="Каталог артистов">
 {% if artists %}
 <div class="card-grid">
     {% for artist in artists %}
@@ -54,5 +58,6 @@
 {% endif %}
 
 {% include 'includes/pagination.html' %}
+</section>
 
 {% endblock %}

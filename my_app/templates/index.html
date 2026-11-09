@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block surface_class %}{% endblock %}
 
 {% block title %}
 Треки
@@ -6,10 +7,11 @@
 
 {% block content %}
 
+<section class="surface-section catalog-intro" aria-labelledby="catalog-title">
 <div class="page-head">
     <div>
         <p class="eyebrow">Открывай новое</p>
-        <h1>Твоя следующая находка</h1>
+        <h1 id="catalog-title">Твоя следующая находка</h1>
         <p>Треки под настроение. Музыка, которую захочется оставить с собой.</p>
     </div>
     {% if current_artist.moderation_status == 'approved' %}
@@ -25,9 +27,11 @@
         href="{% url 'release_list' %}">Релизы</a><a class="tab" href="{% url 'artist_list' %}">Артисты</a></nav>
 
 {% include 'includes/filters.html' %}
+</section>
 
+<section class="surface-section surface-results" aria-labelledby="tracks-title">
 <div class="section-head">
-    <h2>Все треки</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
+    <h2 id="tracks-title">Все треки</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
 </div>
 
 {% if tracks %}
@@ -52,5 +56,6 @@
 {% endif %}
 
 {% include 'includes/pagination.html' %}
+</section>
 
 {% endblock %}
