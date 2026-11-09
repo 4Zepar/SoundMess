@@ -1,22 +1,26 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 {% load music %}
 
 {% block title %}Комментарии: {{ track.title }}{% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Модерация / Комментарии</p>
         <h1>{{ track.title }}</h1>
         <p>{{ track.artist.user.username }} · Комментариев: {{ comment_count }} · Веток: {{ thread_count }}</p>
     </div>
     <a class="btn btn-ghost" href="{% url 'moderation_comments' %}{% if back_query %}?{{ back_query }}{% endif %}">К списку песен</a>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
+{% block moderation_filters %}
 {% include 'includes/track_item.html' %}
 
-<div class="section-head"><h2>Обсуждение песни</h2></div>
+{% endblock %}
+
+{% block moderation_content %}
+<section class="surface-section service-panel surface-results" aria-labelledby="moderated-discussion-title">
+<div class="section-head"><h2 id="moderated-discussion-title">Обсуждение песни</h2></div>
 <p class="helptext comment-guidance">Ответы находятся под исходным комментарием и идут по порядку. Новые ветки показаны первыми. Скрытие убирает ветку из публичного обсуждения; удаление комментария навсегда удаляет и все ответы на него.</p>
 
 {% if comment_threads %}
@@ -30,4 +34,5 @@
 {% endif %}
 
 {% include 'includes/pagination.html' %}
+</section>
 {% endblock %}

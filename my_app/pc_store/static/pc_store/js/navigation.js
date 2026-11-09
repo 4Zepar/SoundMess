@@ -1,17 +1,23 @@
 import { confirmAction, toast } from './http.js';
+import { PageDialog } from './page-dialog.js';
 
 export class Navigation {
     constructor({ mount, unmount }) {
         this.mount = mount;
         this.unmount = unmount;
         this.controller = null;
+        this.pageDialog = new PageDialog(() => this.dismissPageDialog());
         history.scrollRestoration = 'manual';
-        history.replaceState({ scroll: window.scrollY }, '');
+        history.replaceState({ scroll: document.getElementById('workspace').scrollTop }, '');
         document.addEventListener('click', event => this.onClick(event));
         document.addEventListener('submit', event => this.onSubmit(event));
         window.addEventListener('popstate', event => {
             this.navigate(location.href, { history: false, scroll: event.state?.scroll || 0 });
         });
+        const formPage = document.querySelector('[data-page-dialog]');
+        if (formPage) {
+            this.pageDialog.show(formPage, location.href, document.querySelector('#main-content > .messages'), { direct: true });
+        }
     }
 
     async navigate(url, options = {}) {
@@ -22,7 +28,9 @@ export class Navigation {
         const focus = options.preserveFocus && active?.id ? {
             id: active.id, start: active.selectionStart, end: active.selectionEnd,
         } : null;
-        const scroll = options.preserveScroll ? window.scrollY : options.scroll || 0;
+        const workspace = document.getElementById('workspace');
+        const scroll = options.preserveScroll ? workspace.scrollTop : options.scroll || 0;
+        const trigger = options.trigger || active;
         document.documentElement.classList.add('is-navigating');
         try {
             const response = await fetch(url, {
@@ -38,11 +46,27 @@ export class Navigation {
                 location.assign(response.url || url);
                 return;
             }
+            const formPage = shell.querySelector('[data-page-dialog]');
+            if (formPage) {
+                await this.pageDialog.closing;
+                if (controller.signal.aborted) return;
+                this.unmount();
+                document.querySelectorAll('dialog[open]:not(#page-dialog)').forEach(dialog => dialog.close());
+                const menu = document.querySelector('.mobile-more[open]');
+                if (menu) menu.open = false;
+                this.pageDialog.show(formPage, response.url || url, shell.querySelector('#main-content > .messages'), {
+                    direct: options.history === false, trigger,
+                });
+                return;
+            }
+            const returnToBackground = this.pageDialog.dialog.open && response.url === location.href;
+            await this.pageDialog.close();
+            if (controller.signal.aborted) return;
             this.unmount();
             document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
             shell.querySelectorAll('script:not([type="application/json"])').forEach(script => script.remove());
             if (options.history !== false) {
-                history.replaceState({ ...history.state, scroll: window.scrollY }, '');
+                history.replaceState({ ...history.state, scroll: workspace.scrollTop }, '');
                 const target = response.url || new URL(url, location.href).href;
                 if (options.replace || target === location.href) history.replaceState({ scroll }, '', target);
                 else history.pushState({ scroll }, '', target);
@@ -52,7 +76,7 @@ export class Navigation {
             const csrf = next.querySelector('meta[name="csrf-token"]');
             if (csrf) document.querySelector('meta[name="csrf-token"]').content = csrf.content;
             this.mount();
-            window.scrollTo({ top: scroll, behavior: 'auto' });
+            document.getElementById('workspace').scrollTop = returnToBackground ? workspace.scrollTop : scroll;
             const field = focus && document.getElementById(focus.id);
             if (field) {
                 field.focus({ preventScroll: true });
@@ -75,6 +99,15 @@ export class Navigation {
         this.navigate(url.href);
     }
 
+    async dismissPageDialog() {
+        if (this.pageDialog.closing || this.pageDialog.content.querySelector('[data-submitting="true"]')) return;
+        this.controller?.abort();
+        const fallback = this.pageDialog.fallback;
+        await this.pageDialog.close();
+        this.unmount();
+        if (fallback) this.navigate(fallback, { replace: true });
+    }
+
     onClick(event) {
         const anchor = event.target.closest('a[href]');
         if (!anchor || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -82,7 +115,7 @@ export class Navigation {
         if (url.origin !== location.origin || !['http:', 'https:'].includes(url.protocol) || anchor.target || anchor.hasAttribute('download') || url.pathname.startsWith('/admin/')) return;
         if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
         event.preventDefault();
-        if (url.href !== location.href) this.navigate(url.href);
+        if (url.href !== location.href || this.pageDialog.dialog.open) this.navigate(url.href, { trigger: anchor });
     }
 
     async onSubmit(event) {
@@ -93,7 +126,8 @@ export class Navigation {
         if (form.dataset.confirm && !await confirmAction(form.dataset.confirm)) return;
         const data = new FormData(form, event.submitter);
         const method = (form.getAttribute('method') || 'GET').toUpperCase();
-        const target = new URL(form.getAttribute('action') || location.href, location.href);
+        const formUrl = this.pageDialog.content.contains(form) ? this.pageDialog.url : location.href;
+        const target = new URL(form.getAttribute('action') || formUrl, formUrl);
         if (method === 'GET') {
             target.search = '';
             for (const [key, value] of data) if (typeof value === 'string' && value.trim()) target.searchParams.append(key, value);

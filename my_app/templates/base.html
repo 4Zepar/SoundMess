@@ -29,8 +29,7 @@
             <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная">
                 <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}" alt="">SoundMess</a>
             <nav>
-                <div class="nav-section"><span class="nav-label">Открывай новое</span>
-
+                <div class="nav-section">
                     {% include 'includes/nav_link.html' with name='home' label='Треки' icon='music' %}
 
                     {% include 'includes/nav_link.html' with name='release_list' label='Релизы' icon='disc' %}
@@ -68,7 +67,7 @@
                 </div>
                 {% endif %}
 
-                {% if can_moderate %}
+                {% if can_manage_users %}
                 <div class="nav-section"><span class="nav-label">Управление</span>
                     {% include 'includes/nav_link.html' with name='moderation_dashboard' label='Модерация' icon='shield' %}
 
@@ -104,7 +103,7 @@
                 {% include 'includes/ambient_toggle.html' %}
             </div>
         </aside>
-        <div class="workspace">
+        <div class="workspace" id="workspace">
             <main class="main-content {% block surface_class %}page-surface{% endblock %}" id="main-content" tabindex="-1">
 
                 {% if messages %}
@@ -158,7 +157,7 @@
                     {% elif not can_manage_users %}
                     <a href="{% url 'artist_application' %}">Стать артистом</a>
                     {% endif %}
-                    {% if can_moderate %}
+                    {% if can_manage_users %}
                     <a href="{% url 'moderation_dashboard' %}">Модерация</a>
                     {% endif %}
                     {% else %}
@@ -237,6 +236,14 @@
             href="{% url 'create_album' %}">
             {% include 'includes/icon.html' with name='plus' %}
             Новый плейлист</a>
+    </dialog>
+    <dialog id="page-dialog" class="page-dialog" aria-label="Форма">
+        <div class="page-dialog-panel">
+            <button class="icon-button dialog-close" type="button" data-dismiss-page-dialog aria-label="Закрыть">
+                {% include 'includes/icon.html' with name='close' %}
+            </button>
+            <div class="page-dialog-scroll"></div>
+        </div>
     </dialog>
     <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>

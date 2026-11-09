@@ -25,9 +25,9 @@ class ContentQuerySet(models.QuerySet):
         return query
 
     def visible_to(self, user):
-        from .permissions import can_moderate
+        from .permissions import can_manage_users
 
-        if can_moderate(user):
+        if can_manage_users(user):
             return self
         public = Q(pk__in=self.published().values('pk'))
         if user.is_authenticated and user.is_active:
@@ -354,6 +354,5 @@ class ModerationAction(models.Model):
     class Meta:
         ordering = ['-created_at', '-pk']
         permissions = [
-            ('moderate_content', 'Модерация контента и заявок'),
             ('manage_accounts', 'Управление пользователями и балансами')
         ]

@@ -1,14 +1,16 @@
 {% extends 'base.html' %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Кабинет артиста
 {% endblock %}
 
 {% block content %}
+<section class="surface-section service-panel" aria-labelledby="artist-dashboard-title">
 <div class="page-head">
     <div>
-        <p class="eyebrow">Кабинет артиста</p>
-        <h1>Твоя музыка в цифрах</h1>
+        <h1 id="artist-dashboard-title">Твоя музыка в цифрах</h1>
         <p>{{ artist.user.username }} — создавай, публикуй, наблюдай.</p>
     </div>
     <div class="page-actions"><a class="btn btn-secondary" href="{% url 'create_release' %}">
@@ -19,21 +21,23 @@
             Загрузить
             трек</a></div>
 </div>
-<div class="stats-grid">
-    <article class="stat-card">
+</section>
+
+<div class="stats-grid service-grid">
+    <article class="stat-card service-panel">
         <p class="eyebrow">За {{ period }} дней</p><strong>{{ chart_total }}</strong><small>прослушиваний</small>
     </article>
-    <article class="stat-card">
+    <article class="stat-card service-panel">
         <p class="eyebrow">Подписчики</p><strong>{{ followers_count }}</strong><small>следят за музыкой</small>
     </article>
-    <article class="stat-card">
+    <article class="stat-card service-panel">
         <p class="eyebrow">Треки</p><strong>{{ tracks.count }}</strong><small>в твоём кабинете</small>
     </article>
 </div>
-<div class="dashboard-columns">
-    <section class="panel">
-        <div class="review-head">
-            <h2>Прослушивания</h2>
+<div class="dashboard-columns service-grid">
+    <section class="surface-section service-panel" aria-labelledby="plays-title">
+        <div class="section-head">
+            <h2 id="plays-title">Прослушивания</h2>
             <nav class="period-switch" aria-label="Период аналитики"><a href="?period=7"
                     class="{% if period == 7 %}is-active{% endif %}">7 дней</a><a href="?period=30"
                     class="{% if period == 30 %}is-active{% endif %}">30 дней</a></nav>
@@ -52,8 +56,8 @@
         {% endif %}
 
     </section>
-    <section class="panel">
-        <h2>Топ-5 треков</h2>
+    <section class="surface-section service-panel" aria-labelledby="top-tracks-title">
+        <div class="section-head"><h2 id="top-tracks-title">Топ-5 треков</h2></div>
         {% for track in top_tracks %}
         <a class="ranking-row"
             href="{{ track.get_absolute_url }}"><span>{{ forloop.counter }}</span><strong>{{ track.title }}</strong><small>{{ track.plays_count }}
@@ -64,8 +68,9 @@
 
     </section>
 </div>
+<section class="surface-section service-panel" aria-labelledby="own-tracks-title">
 <div class="section-head">
-    <h2>Мои треки</h2>
+    <h2 id="own-tracks-title">Мои треки</h2>
 </div>
 {% for track in tracks %}
 <div class="management-row">
@@ -80,9 +85,11 @@
     <p>Загрузи трек и отправь его на проверку.</p>
 </div>
 {% endfor %}
+</section>
 
+<section class="surface-section surface-results" aria-labelledby="own-releases-title">
 <div class="section-head">
-    <h2>Мои релизы</h2>
+    <h2 id="own-releases-title">Мои релизы</h2>
 </div>
 {% if albums %}
 <div class="card-grid">
@@ -93,5 +100,6 @@
 {% else %}
 <p class="muted">Собери свои треки в первый релиз.</p>
 {% endif %}
+</section>
 
 {% endblock %}

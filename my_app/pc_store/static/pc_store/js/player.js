@@ -135,7 +135,7 @@ export class Player {
     playFromRow(row) {
         const metadata = trackData(row);
         if (!metadata.url) return;
-        const queue = [...document.querySelectorAll('.track-row[data-url]')]
+        const queue = [...document.querySelectorAll('[data-track-source]')]
             .map(trackData).filter(track => track.url)
             .filter((track, index, all) => all.findIndex(item => item.id === track.id) === index);
         const sameQueue = queue.length === this.queue.length
@@ -311,13 +311,13 @@ export class Player {
         document.getElementById('player-prev').disabled = !this.current;
         document.getElementById('player-next').disabled = index < 0 || index >= this.playOrder.length - 1;
         this.syncShuffle();
-        for (const row of document.querySelectorAll('.track-row[data-track-id]')) {
+        for (const row of document.querySelectorAll('[data-track-source]')) {
             const active = row.dataset.trackId === this.current?.id;
             row.classList.toggle('is-playing', active && playing);
-            const icon = row.querySelector('.track-play use');
+            const icon = row.querySelector('[data-play-track] use');
             if (icon) icon.setAttribute('href', active && playing ? '#icon-pause' : '#icon-play');
         }
-        const visible = this.current && document.querySelector('.track-row[data-track-id="' + this.current.id + '"]');
+        const visible = this.current && document.querySelector('[data-track-source][data-track-id="' + this.current.id + '"]');
         if (visible) this.setLiked(this.current.id, visible.dataset.liked === 'true');
         if (this.current && document.getElementById('app-shell').dataset.authenticated === 'false') this.setLiked(this.current.id, false);
     }

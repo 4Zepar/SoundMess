@@ -33,7 +33,7 @@ class PublicationTests(AppTestCase):
     def test_unchanged_published_release_keeps_approval_and_publication(self):
         album = self.make_album(
             cover=cover_upload(), reviewed_at=timezone.now(),
-            reviewed_by=self.moderator, moderation_note='Approved by moderator',
+            reviewed_by=self.administrator, moderation_note='Approved by administrator',
         )
         fields = ('moderation_status', 'published_at', 'reviewed_at', 'reviewed_by_id', 'moderation_note', 'cover')
         before = Album.objects.filter(pk=album.pk).values(*fields).get()
@@ -60,7 +60,7 @@ class PublicationTests(AppTestCase):
         self.assertEqual(album.moderation_status, 'approved')
 
     def test_changed_published_release_requires_another_review(self):
-        album = self.make_album(reviewed_at=timezone.now(), reviewed_by=self.moderator)
+        album = self.make_album(reviewed_at=timezone.now(), reviewed_by=self.administrator)
         self.login(self.artist_user)
         response = self.client.post(
             reverse('edit_release', args=[album.pk]), self.release_data(album, title='Updated release'),
@@ -113,7 +113,7 @@ class PublicationTests(AppTestCase):
             with self.subTest(field=next(iter(change))):
                 track = self.make_track(
                     cover=cover_upload(), moderation_note='Previously approved',
-                    reviewed_at=timezone.now(), reviewed_by=self.moderator,
+                    reviewed_at=timezone.now(), reviewed_by=self.administrator,
                 )
                 response = self.client.post(
                     reverse('edit_track', args=[track.pk]),
@@ -168,7 +168,7 @@ class PublicationTests(AppTestCase):
         self.assertEqual(self.client.get(self.track.get_absolute_url()).status_code, 404)
         self.assertEqual(self.client.get(self.track.audio_url).status_code, 404)
         self.assertEqual(self.client.get(album.get_absolute_url()).status_code, 404)
-        self.login(self.moderator)
+        self.login(self.administrator)
         queue = self.client.get(reverse('moderation_tracks'))
         self.assertContains(queue, self.track.title)
         self.client.post(reverse('review_track', args=[self.track.pk]), {'decision': 'approved'})
@@ -273,27 +273,45 @@ class PublicationTests(AppTestCase):
         self.client.logout()
         self.assertNotContains(self.client.get(reverse('home')), 'Changed title')
 
-    def test_moderator_can_approve_and_log_pending_track(self):
+    def test_administrator_can_approve_and_log_pending_track(self):
         self.track.moderation_status = 'pending'
         self.track.save(update_fields=['moderation_status'])
-        self.login(self.moderator)
+        self.login(self.administrator)
         response = self.client.post(reverse('review_track', args=[self.track.pk]), {'decision': 'approved'})
         self.assertEqual(response.status_code, 302)
         self.track.refresh_from_db()
         self.assertEqual(self.track.moderation_status, 'approved')
         self.assertTrue(
             ModerationAction.objects.filter(
-                actor=self.moderator,
+                actor=self.administrator,
                 target_type='track',
                 target_id=self.track.pk,
                 action='approved'
             ).exists()
         )
 
+    def test_pending_track_can_be_approved_from_its_detail_page(self):
+        track = self.make_track(moderation_status='pending')
+        detail_url = track.get_absolute_url()
+        review_url = reverse('review_track', args=[track.pk])
+
+        self.login(self.artist_user)
+        self.assertNotContains(self.client.get(detail_url), f'action="{review_url}"')
+        self.assertEqual(self.client.post(review_url, {'decision': 'approved', 'return_to': 'track'}).status_code, 403)
+
+        self.login(self.administrator)
+        self.assertContains(self.client.get(detail_url), f'action="{review_url}"')
+        response = self.client.post(review_url, {'decision': 'approved', 'return_to': 'track'}, follow=True)
+        self.assertRedirects(response, detail_url)
+        self.assertNotContains(response, f'action="{review_url}"')
+        track.refresh_from_db()
+        self.assertEqual(track.moderation_status, 'approved')
+        self.assertEqual(track.reviewed_by, self.administrator)
+
     def test_rejection_requires_reason(self):
         self.track.moderation_status = 'pending'
         self.track.save(update_fields=['moderation_status'])
-        self.login(self.moderator)
+        self.login(self.administrator)
         self.client.post(reverse('review_track', args=[self.track.pk]), {'decision': 'rejected'})
         self.track.refresh_from_db()
         self.assertEqual(self.track.moderation_status, 'pending')
@@ -345,10 +363,10 @@ class PublicationTests(AppTestCase):
         self.assertEqual(self.track.audio_url, '')
         self.assertContains(self.client.get(reverse('home')), 'Аудиофайл недоступен')
 
-    def test_moderator_cannot_approve_own_material(self):
-        artist = Artist.objects.create(user=self.moderator, moderation_status='approved')
+    def test_administrator_cannot_approve_own_material(self):
+        artist = Artist.objects.create(user=self.administrator, moderation_status='approved')
         track = self.make_track(artist=artist, moderation_status='pending')
-        self.login(self.moderator)
+        self.login(self.administrator)
         self.client.post(reverse('review_track', args=[track.pk]), {'decision': 'approved'})
         track.refresh_from_db()
         self.assertEqual(track.moderation_status, 'pending')
@@ -360,7 +378,7 @@ class PublicationTests(AppTestCase):
         artist = Artist.objects.get(user=self.listener)
         self.assertEqual(artist.moderation_status, 'pending')
         self.assertRedirects(self.client.get(reverse('upload_track')), reverse('artist_application'))
-        self.login(self.moderator)
+        self.login(self.administrator)
         self.client.post(reverse('review_artist_application', args=[artist.pk]), {'decision': 'approved'})
         artist.refresh_from_db()
         self.assertEqual(artist.moderation_status, 'approved')

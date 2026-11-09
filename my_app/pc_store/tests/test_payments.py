@@ -131,9 +131,9 @@ class PaymentTests(AppTestCase):
         self.assertEqual(WalletTransaction.objects.count(), 1)
 
     def test_same_key_from_two_donors_does_not_collide_in_artist_wallet(self):
-        adjust_balance(user=self.moderator, amount_cents=1000, operation_key='initial', description='Topup')
+        adjust_balance(user=self.administrator, amount_cents=1000, operation_key='initial', description='Topup')
         donations = [donate(donor=donor, artist=self.artist, amount_cents=100, operation_key='shared')
-                     for donor in (self.listener, self.moderator)]
+                     for donor in (self.listener, self.administrator)]
         self.assertEqual(len({donation.pk for donation in donations}), 2)
         self.assertEqual(Wallet.objects.get(user=self.artist_user).balance_cents, 200)
         self.assertTrue(all(donation.transactions.count() == 2 for donation in donations))

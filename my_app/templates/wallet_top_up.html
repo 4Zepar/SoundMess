@@ -1,14 +1,16 @@
 {% extends 'base.html' %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Кошелёк
 {% endblock %}
 
 {% block content %}
+<section class="surface-section service-panel wallet-overview" aria-labelledby="wallet-title">
 <div class="page-head">
     <div>
-        <p class="eyebrow">Поддерживай любимое</p>
-        <h1>Кошелёк</h1>
+        <h1 id="wallet-title">Кошелёк</h1>
         <p>Виртуальный баланс для поддержки артистов.</p>
     </div>
 </div>
@@ -20,15 +22,16 @@
     {% include 'includes/icon.html' with name='wallet' %}
 
 </div>
-<div class="wallet-layout">
-    <section class="panel">
-        <h2>
+</section>
+<div class="wallet-layout service-grid">
+    <section class="surface-section service-panel" aria-labelledby="top-up-title">
+        <div class="section-head"><h2 id="top-up-title">
             {% if confirmation %}
             Подтвердить пополнение
             {% else %}
             Пополнить баланс
             {% endif %}
-        </h2>
+        </h2></div>
         <form method="post">
             {% csrf_token %}
             {{ form.non_field_errors }}
@@ -61,9 +64,9 @@
         </form>
         <p class="wallet-notice">Средства виртуальные. Реальные деньги не списываются и не зачисляются.</p>
     </section>
-    <section class="panel">
-        <h2>История операций</h2>
-        {% include 'includes/transactions.html' %}
+    <section class="surface-section service-panel" aria-labelledby="wallet-history-title">
+        <div class="section-head"><h2 id="wallet-history-title">История операций</h2></div>
+        {% include 'includes/history.html' with entries=transactions row_template='includes/transaction_row.html' empty_message='Операций пока нет.' only %}
 
     </section>
 </div>

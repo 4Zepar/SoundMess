@@ -2,13 +2,16 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Медиатека
 {% endblock %}
 
 {% block content %}
 
-<section class="profile-head">
+<section class="surface-section profile-overview" aria-labelledby="profile-title">
+<div class="profile-head">
     <div class="avatar avatar-large">
         {% with avatar=profile.avatar|image_url %}
 
@@ -21,14 +24,11 @@
         {% endwith %}
     </div>
     <div>
-        <p class="eyebrow">Твоё пространство</p>
-        <h1>{{ user.username }}</h1>
+        <h1 id="profile-title">{{ user.username }}</h1>
         <p class="profile-meta">{{ profile.get_role_display }}
             {% if can_manage_users %}
             ·
             Администратор
-            {% elif can_moderate %}
-            · Модератор
             {% endif %}
         </p>
         <div class="page-actions"><a class="btn btn-ghost" href="{% url 'profile_edit' %}">
@@ -42,14 +42,16 @@
     </div><a class="library-balance" href="{% url 'wallet_top_up' %}"><span
             class="eyebrow">Баланс</span><strong>{{ wallet.balance_usd|floatformat:2 }} USD</strong><span
             class="muted">Пополнить →</span></a>
-</section>
+</div>
 
 {% if profile.bio %}
 <p class="muted">{{ profile.bio }}</p>
 {% endif %}
+</section>
 
+<section class="surface-section library-panel" aria-labelledby="library-title">
 <div class="section-head">
-    <h2>Медиатека</h2><a class="btn btn-secondary" href="{% url 'create_album' %}">
+    <h2 id="library-title">Медиатека</h2><a class="btn btn-secondary" href="{% url 'create_album' %}">
         {% include 'includes/icon.html' with name='plus' small=True %}
         Плейлист</a>
 </div>
@@ -137,5 +139,6 @@
         <p>Включи трек и начни слушать.</p>
     </div>
     {% endif %}
+</section>
 </section>
 {% endblock %}

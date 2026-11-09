@@ -2,21 +2,25 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Мои подписки
 {% endblock %}
 
 {% block content %}
-<div class="page-head">
-    <div>
-        <p class="eyebrow">Музыка от тех, кто нравится</p>
-        <h1>Мои подписки</h1>
-        <p>Новые синглы и релизы любимых артистов.</p>
-    </div><a class="btn btn-ghost" href="{% url 'artist_list' %}">Найти артистов</a>
-</div>
+<section class="surface-section feed-panel" aria-labelledby="feed-title">
+    <div class="page-head">
+        <div>
+            <h1 id="feed-title">Мои подписки</h1>
+            <p>Новые синглы и релизы любимых артистов.</p>
+        </div>
+        <a class="btn btn-ghost" href="{% url 'artist_list' %}">Найти артистов</a>
+    </div>
+</section>
 
 {% if followed_artists %}
-<section aria-labelledby="followed-artists-title">
+<section class="surface-section feed-panel" aria-labelledby="followed-artists-title">
     <div class="section-head">
         <h2 id="followed-artists-title">Артисты <span class="tab-count">{{ followed_artists|length }}</span></h2>
     </div>
@@ -41,42 +45,25 @@
 </section>
 {% endif %}
 
-<div class="section-head"><h2>Новые публикации</h2></div>
-{% for entry in entries %}
-<article class="feed-entry">
-    <p class="feed-label"><span>
-            {% if entry.kind == 'album' %}
-            Новый релиз
-            {% else %}
-            Новый
-            сингл
-            {% endif %}
-        </span><time>{{ entry.date|date:'d.m.Y' }}</time></p>
-    {% if entry.kind == 'album' %}
-    <a class="feed-album" href="{{ entry.item.get_absolute_url }}">
-        {% with cover=entry.item.cover|image_url %}
-
-        {% if cover %}
-        <img src="{{ cover }}" alt="" loading="lazy">
+<section class="surface-section surface-results" aria-labelledby="feed-publications-title">
+<div class="section-head"><h2 id="feed-publications-title">Новые публикации</h2></div>
+{% if entries %}
+<div class="card-grid feed-entries">
+    {% for entry in entries %}
+    <div class="feed-entry{% if entry.kind == 'track' %} feed-entry-track{% endif %}">
+        {% if entry.kind == 'album' %}
+        {% include 'includes/album_card.html' with album=entry.item show_new=True %}
         {% else %}
-        <span class="art-placeholder">
-            {% include 'includes/icon.html' with name='disc' %}
-        </span>
+        <p class="feed-label">
+            <span>Новый сингл</span>
+            <time datetime="{{ entry.date|date:'c' }}">{{ entry.date|date:'d.m.Y' }}</time>
+        </p>
+        {% include 'includes/track_item.html' with track=entry.item %}
         {% endif %}
-
-        {% endwith %}
-        <span>
-            <h2>{{ entry.item.title }}</h2><span class="muted">{{ entry.item.owner.username }} ·
-                {{ entry.item.get_release_type_display }}</span>
-        </span></a>
-    {% else %}
-
-    {% include 'includes/track_item.html' with track=entry.item %}
-
-    {% endif %}
-
-</article>
-{% empty %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
 <div class="empty-state">
     {% include 'includes/icon.html' with name='feed' %}
     {% if followed_artists %}
@@ -89,8 +76,9 @@
         href="{% url 'artist_list' %}">Открыть артистов</a>
     {% endif %}
 </div>
-{% endfor %}
+{% endif %}
 
 {% include 'includes/pagination.html' %}
+</section>
 
 {% endblock %}

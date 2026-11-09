@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block surface_class %}{% endblock %}
+
+{% block content %}
+<section class="surface-section service-panel moderation-header" aria-label="Раздел модерации">
+    {% block moderation_heading %}{% endblock %}
+    {% include 'moderation/nav.html' %}
+    {% block moderation_filters %}{% endblock %}
+</section>
+
+{% block moderation_content %}{% endblock %}
+{% endblock %}

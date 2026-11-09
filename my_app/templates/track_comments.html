@@ -2,67 +2,74 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 {{ track.title }}
 {% endblock %}
 
 {% block content %}
 
-<section class="detail-hero">
-    <div class="detail-art">
-        {% with cover=track.cover|image_url %}
-
-        {% if cover %}
-        <img src="{{ cover }}" alt="">
-        {% else %}
-        <span class="art-placeholder">
-            {% include 'includes/icon.html' with name='music' %}
-        </span>
+{% with cover=track.cover|image_url audio_url=track.audio_url %}
+<section class="surface-section track-overview" aria-labelledby="track-title" {% include 'includes/track_source.html' %}>
+    <div class="detail-hero release-hero">
+        {% if track.moderation_status == 'approved' and track.published_at %}
+        <div class="release-date">
+            Дата публикации · <time datetime="{{ track.published_at|date:'c' }}">{{ track.published_at|date:'d.m.Y' }}</time>
+        </div>
         {% endif %}
-
-        {% endwith %}
-
-    </div>
-    <div class="detail-info">
-        <p class="eyebrow">{{ track.get_release_type_display }}
-            {% if track.release_year %}
-            ·
-            {{ track.release_year }}
-            {% endif %}
-        </p>
-        <h1>{{ track.title }}</h1>
-        <p><a href="{{ track.artist.get_absolute_url }}">{{ track.artist.user.username }}</a> ·
-            {{ track.get_genre_display }}
-            {% if track.duration_seconds %}
-            ·
-            {{ track.duration_seconds|duration }}
-            {% endif %}
-        </p>
-        <div class="button-row">
-            {% include 'includes/status.html' with item=track %}
-
-            {% if track.artist.user == user %}
-            <a class="btn btn-secondary" href="{% url 'edit_track' track.id %}">Редактировать</a>
+        <div class="detail-art">
+            {% if cover %}
+            <img src="{{ cover }}" alt="">
+            {% else %}
+            <span class="art-placeholder">
+                {% include 'includes/icon.html' with name='music' %}
+            </span>
             {% endif %}
         </div>
+        <div class="detail-info">
+            <h1 id="track-title">{{ track.title }}</h1>
+            <p><a href="{{ track.artist.get_absolute_url }}">{{ track.artist.user.username }}</a> ·
+                {{ track.get_genre_display }} · {{ track.get_release_type_display }}
+                {% if track.release_year %}
+                · {{ track.release_year }}
+                {% endif %}
+                {% if track.duration_seconds %}
+                · {{ track.duration_seconds|duration }}
+                {% endif %}
+                {% if track.is_explicit %}
+                <span class="badge" title="Ненормативная лексика">E</span>
+                {% endif %}
+            </p>
+            {% if track.artist.user == user and track.moderation_note %}
+            <div class="alert alert-info">{{ track.moderation_note }}</div>
+            {% endif %}
+            <div class="button-row">
+                {% include 'includes/status.html' with item=track %}
+                {% if can_manage_users and track.moderation_status == 'pending' and track.artist.user_id != user.pk %}
+                <form method="post" action="{% url 'review_track' track.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="return_to" value="track">
+                    <button class="btn" type="submit" name="decision" value="approved">Одобрить</button>
+                </form>
+                {% endif %}
+                {% if track.artist.user == user %}
+                <a class="btn btn-secondary" href="{% url 'edit_track' track.id %}">Редактировать</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
+    {% if not audio_url %}
+    <p class="alert alert-info">Аудиофайл временно недоступен.</p>
+    {% endif %}
 </section>
-
-{% if track.artist.user == user and track.moderation_note %}
-<p class="alert alert-info">{{ track.moderation_note }}</p>
-
-{% endif %}
-
-{% include 'includes/track_item.html' %}
-
-{% if not track.audio_url %}
-<p class="alert alert-info">Аудиофайл временно
-    недоступен.</p>
-{% endif %}
+{% endwith %}
 
 <div class="comments-layout">
-    <section>
-        <h2>Комментарии</h2>
+    <section class="surface-section comments-panel" aria-labelledby="comments-title">
+        <div class="section-head">
+            <h2 id="comments-title">Комментарии</h2>
+        </div>
         {% if track.moderation_status == 'approved' %}
 
         {% if user.is_authenticated %}
@@ -91,8 +98,10 @@
             {% endfor %}
         </div>
     </section>
-    <section class="panel lyrics-panel">
-        <h2>Текст песни</h2>
+    <section class="surface-section lyrics-panel" aria-labelledby="lyrics-title">
+        <div class="section-head">
+            <h2 id="lyrics-title">Текст песни</h2>
+        </div>
         <div class="lyrics">{{ track.lyrics|default:'Артист пока не добавил текст.' }}</div>
     </section>
 </div>

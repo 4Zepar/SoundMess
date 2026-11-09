@@ -1,18 +1,18 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 {% load music %}
 
 {% block title %}Модерация комментариев{% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Модерация</p>
         <h1>Комментарии к песням</h1>
         <p>Выбери песню, чтобы просмотреть обсуждение и изменить видимость комментариев.</p>
     </div>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
+{% block moderation_filters %}
 <form method="get" class="comment-filters" data-filter-form>
     {% for field in filter_form %}
         {% include 'includes/field.html' %}
@@ -23,8 +23,12 @@
     </div>
 </form>
 
+{% endblock %}
+
+{% block moderation_content %}
+<section class="surface-section service-panel surface-results" aria-labelledby="commented-tracks-title">
 <div class="section-head">
-    <h2>Песни с комментариями</h2>
+    <h2 id="commented-tracks-title">Песни с комментариями</h2>
     <small>{{ page_obj.paginator.count }} найдено</small>
 </div>
 <div class="comment-track-list">
@@ -60,4 +64,5 @@
 </div>
 
 {% include 'includes/pagination.html' %}
+</section>
 {% endblock %}

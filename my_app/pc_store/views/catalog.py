@@ -1,5 +1,9 @@
+from datetime import timedelta
+
 from django.core.paginator import Paginator
+from django.db.models import Case, Q, Value, When
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 
 from pc_store.forms import TrackFilterForm
 from pc_store.models import Album, Artist, Comment, Track
@@ -22,7 +26,17 @@ def track_list(request):
 
 def release_list(request):
     form = TrackFilterForm(request.GET)
-    albums = album_cards()
+    new_since = timezone.now() - timedelta(days=30)
+    albums = album_cards().annotate(
+        is_new=Case(
+            When(
+                Q(published_at__gte=new_since)
+                | Q(published_at__isnull=True, created_at__gte=new_since),
+                then=Value(True),
+            ),
+            default=Value(False),
+        ),
+    )
     if form.is_valid():
         albums = filter_albums(albums, form.cleaned_data)
         sort = form.cleaned_data.get('sort')

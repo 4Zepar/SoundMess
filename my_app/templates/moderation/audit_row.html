@@ -1,0 +1,9 @@
+{% load music %}
+<div class="audit-row">
+    <strong>{{ entry.actor.username|default:'Удалённый аккаунт' }}</strong>
+    <div>{{ entry.action|action_label }}<small>{{ entry.target_type|target_label }}
+            #{{ entry.target_id }}
+            {% if entry.note %} · {{ entry.note }}{% endif %}
+        </small></div>
+    <time>{{ entry.created_at|date:'d.m H:i' }}</time>
+</div>

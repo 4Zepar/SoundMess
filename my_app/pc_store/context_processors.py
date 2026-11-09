@@ -1,4 +1,4 @@
-from .permissions import can_manage_users, can_moderate
+from .permissions import can_manage_users
 
 
 def navigation(request):
@@ -10,6 +10,5 @@ def navigation(request):
             request.user.albums.filter(is_public=False, is_favorite_folder=False).values('id', 'title')
         ) if request.user.is_authenticated else [],
         'current_artist': artist,
-        'can_moderate': can_moderate(request.user),
         'can_manage_users': can_manage_users(request.user),
     }

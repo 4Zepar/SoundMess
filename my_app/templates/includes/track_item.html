@@ -2,11 +2,7 @@
 
 {% with cover=track.cover|image_url audio_url=track.audio_url %}
 
-<div class="track-row" data-track-id="{{ track.id }}" data-title="{{ track.title }}"
-    data-artist="{{ track.artist.user.username }}" data-url="{{ audio_url }}" data-cover="{{ cover }}"
-    data-detail="{{ track.get_absolute_url }}" data-duration="{{ track.duration_seconds|default:0 }}"
-    data-liked="{{ track.is_liked|yesno:'true,false' }}"
-    data-countable="{% if track.moderation_status == 'approved' and track.artist.moderation_status == 'approved' %}true{% else %}false{% endif %}">
+<div class="track-row" {% include 'includes/track_source.html' %}>
     <div class="track-art">
         {% if cover %}
         <img src="{{ cover }}" alt="" loading="lazy">

@@ -2,16 +2,17 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Редактор трека
 {% endblock %}
 
 {% block content %}
-<section class="form-page">
+<section class="surface-section service-panel form-page" aria-labelledby="track-editor-title" data-page-dialog="{% url 'artist_dashboard' %}">
     <div class="page-head">
         <div>
-            <p class="eyebrow">Кабинет артиста</p>
-            <h1>
+            <h1 id="track-editor-title">
                 {% if track.pk %}
                 Изменить трек
                 {% else %}
@@ -71,7 +72,7 @@
             {% endfor %}
 
             {% if track.pk and track.moderation_status != 'draft' %}
-            <p class="helptext">Любые изменения трека, включая название, обложку, аудио и текст, требуют одобрения модератора. После сохранения изменённый трек будет на проверке и станет доступен слушателям после одобрения.</p>
+            <p class="helptext">Любые изменения трека, включая название, обложку, аудио и текст, требуют одобрения администратора. После сохранения изменённый трек будет на проверке и станет доступен слушателям после одобрения.</p>
             {% endif %}
             <div class="button-row">
                 {% if track.pk and track.moderation_status != 'draft' %}
@@ -81,7 +82,7 @@
                     проверку</button><button class="btn btn-secondary" type="submit" name="intent"
                     value="draft">Сохранить черновик</button>
                 {% endif %}
-                <a class="btn btn-ghost"
+                <a class="btn btn-ghost" data-dismiss-page-dialog
                     href="{% url 'artist_dashboard' %}">Отмена</a></div>
         </form>
     </div>

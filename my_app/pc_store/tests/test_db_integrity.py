@@ -52,7 +52,7 @@ class DatabaseIntegrityTests(AppTestCase):
 
     def test_donation_key_is_unique_within_each_donor(self):
         first = Donation.objects.create(donor=self.listener, artist=self.artist, amount_cents=10, idempotency_key='shared')
-        Donation.objects.create(donor=self.moderator, artist=self.artist, amount_cents=10, idempotency_key='shared')
+        Donation.objects.create(donor=self.administrator, artist=self.artist, amount_cents=10, idempotency_key='shared')
         self.assert_integrity_error(lambda: Donation.objects.create(
             donor=first.donor, artist=self.artist, amount_cents=10, idempotency_key='shared',
         ))

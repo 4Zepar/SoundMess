@@ -43,7 +43,7 @@ def review_content(instance, *, actor, decision, note=''):
     instance = type(instance).objects.select_for_update().get(pk=instance.pk)
     owner_id = instance.owner_id if isinstance(instance, Album) else instance.artist.user_id
     if owner_id == actor.pk:
-        raise ValidationError('Свой материал должен проверить другой модератор.')
+        raise ValidationError('Свой материал должен проверить другой администратор.')
     if decision not in {'approved', 'rejected', 'hidden'}:
         raise ValidationError('Неизвестное решение.')
     if decision in {'rejected', 'hidden'} and not note.strip():

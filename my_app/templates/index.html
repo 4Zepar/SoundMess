@@ -10,7 +10,6 @@
 <section class="surface-section catalog-intro" aria-labelledby="catalog-title">
 <div class="page-head">
     <div>
-        <p class="eyebrow">Открывай новое</p>
         <h1 id="catalog-title">Твоя следующая находка</h1>
         <p>Треки под настроение. Музыка, которую захочется оставить с собой.</p>
     </div>
@@ -31,13 +30,10 @@
 
 <section class="surface-section surface-results" aria-labelledby="tracks-title">
 <div class="section-head">
-    <h2 id="tracks-title">Все треки</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
+    <h2 id="tracks-title">Все треки</h2>
 </div>
 
 {% if tracks %}
-<div class="track-list-heading" aria-hidden="true"><span>#</span><span>Название / артист</span><span
-        class="track-genre">Жанр</span><span class="track-stat">Слушают</span><span
-        class="track-duration">Время</span><span></span></div>
 <div class="track-list">
     {% for track in tracks %}
 

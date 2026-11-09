@@ -10,26 +10,27 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from pc_store.constants import HISTORY_LIMIT
 from pc_store.forms import BalanceAdjustmentForm, ModerationCommentFilterForm, ReviewForm
 from pc_store.models import Album, Artist, Comment, ModerationAction, Track
-from pc_store.permissions import administrator_required, moderator_required
-from pc_store.selectors import track_cards
+from pc_store.permissions import administrator_required
+from pc_store.selectors import album_cards, track_cards
 from pc_store.services.payments import adjust_balance
 from pc_store.services.publication import review_content
 from pc_store.views.wallet import payment_token, read_payment_token
 
 
-@moderator_required
+@administrator_required
 def dashboard(request):
     return render(request, 'moderation/dashboard.html', {
         'pending_artists_count': Artist.objects.filter(moderation_status='pending').count(),
         'pending_tracks_count': Track.objects.filter(moderation_status='pending').count(),
         'pending_albums_count': Album.objects.filter(is_public=True, moderation_status='pending').count(),
-        'actions': ModerationAction.objects.select_related('actor')[:20],
+        'actions': list(ModerationAction.objects.select_related('actor')[:HISTORY_LIMIT]),
     })
 
 
-@moderator_required
+@administrator_required
 def applications(request):
     status = request.GET.get('status', 'pending')
     query = Artist.objects.select_related('user__profile')
@@ -43,7 +44,7 @@ def applications(request):
     )
 
 
-@moderator_required
+@administrator_required
 @require_POST
 def review_application(request, artist_id):
     artist = get_object_or_404(Artist, pk=artist_id)
@@ -76,7 +77,7 @@ def review_application(request, artist_id):
     return redirect('moderation_applications')
 
 
-@moderator_required
+@administrator_required
 def content_queue(request, kind):
     model = Track if kind == 'track' else Album
     query = model.objects.all()
@@ -104,7 +105,7 @@ def content_queue(request, kind):
     )
 
 
-@moderator_required
+@administrator_required
 @require_POST
 def review_material(request, kind, object_id):
     model = Track if kind == 'track' else Album
@@ -123,10 +124,12 @@ def review_material(request, kind, object_id):
             messages.error(request, ' '.join(error.messages))
     else:
         messages.error(request, 'Укажите корректное решение и причину.')
+    if kind == 'track' and request.POST.get('return_to') == 'track':
+        return redirect(item)
     return redirect('moderation_tracks' if kind == 'track' else 'moderation_albums')
 
 
-@moderator_required
+@administrator_required
 def comments(request):
     form = ModerationCommentFilterForm(request.GET)
     albums = Album.objects.filter(
@@ -161,7 +164,7 @@ def comments(request):
     })
 
 
-@moderator_required
+@administrator_required
 def track_comments(request, track_id):
     track = get_object_or_404(track_cards(request.user, Track.objects.all()), pk=track_id)
     query = track.comments.filter(parent__isnull=True).select_related('author').order_by('-created_at', '-pk')
@@ -200,7 +203,7 @@ def track_comments(request, track_id):
     })
 
 
-@moderator_required
+@administrator_required
 @require_POST
 def comment_visibility(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
@@ -221,7 +224,7 @@ def comment_visibility(request, comment_id):
     return redirect(destination)
 
 
-@moderator_required
+@administrator_required
 @require_POST
 def delete_comment(request, comment_id):
     with transaction.atomic():
@@ -263,11 +266,11 @@ def user_detail(request, user_id):
     account = get_object_or_404(get_user_model().objects.select_related('profile', 'wallet'), pk=user_id)
     role = 'administrator' if account.is_superuser or account.groups.filter(
         name='Администраторы'
-    ).exists() else 'moderator' if account.groups.filter(name='Модераторы').exists() else 'member'
+    ).exists() else 'member'
     return render(request, 'moderation/user_detail.html', {
         'account': account, 'account_role': role,
         'tracks': track_cards(request.user, Track.objects.filter(artist__user=account)),
-        'albums': account.albums.filter(is_public=True),
+        'albums': album_cards(account.albums.filter(is_public=True)),
         'comments': account.track_comments.select_related('track')[:20],
         'wallet': account.wallet,
         'adjustment_form': BalanceAdjustmentForm(
@@ -321,18 +324,18 @@ def update_user(request, user_id):
             account.is_active = request.POST['active'] == 'true'
             account.save(update_fields=['is_active'])
             note = 'Аккаунт активирован' if account.is_active else 'Аккаунт заблокирован'
-        elif action == 'role' and request.POST.get('role') in {'member', 'moderator', 'administrator'}:
+        elif action == 'role' and request.POST.get('role') in {'member', 'administrator'}:
             if account.is_superuser:
                 raise PermissionDenied
             role = request.POST['role']
-            account.groups.remove(*Group.objects.filter(name__in=['Модераторы', 'Администраторы']))
-            if role != 'member':
-                account.groups.add(
-                    Group.objects.get(name='Администраторы' if role == 'administrator' else 'Модераторы')
-                )
-            account.is_staff = role != 'member'
+            administrators = Group.objects.get(name='Администраторы')
+            if role == 'administrator':
+                account.groups.add(administrators)
+            else:
+                account.groups.remove(administrators)
+            account.is_staff = role == 'administrator'
             account.save(update_fields=['is_staff'])
-            labels = {'member': 'Пользователь', 'moderator': 'Модератор', 'administrator': 'Администратор'}
+            labels = {'member': 'Пользователь', 'administrator': 'Администратор'}
             note = f'Уровень доступа сохранён: {labels[role]}.'
         else:
             messages.error(request, 'Некорректное действие.')

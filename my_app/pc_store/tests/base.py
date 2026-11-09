@@ -50,8 +50,6 @@ class AppTestCase(TestCase):
         self.artist_user.profile.role = 'artist'
         self.artist_user.profile.save(update_fields=['role'])
         self.artist = Artist.objects.create(user=self.artist_user, moderation_status='approved')
-        self.moderator = User.objects.create_user(username='moderator', is_staff=True)
-        self.moderator.groups.add(Group.objects.get(name='Модераторы'))
         self.administrator = User.objects.create_user(username='administrator', is_staff=True)
         self.administrator.groups.add(Group.objects.get(name='Администраторы'))
         self.track = self.make_track(title='Published song')

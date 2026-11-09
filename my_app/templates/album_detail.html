@@ -2,13 +2,20 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 {{ album.title }}
 {% endblock %}
 
 {% block content %}
 
-<section class="detail-hero">
+<section class="surface-section detail-hero release-hero" aria-labelledby="album-title">
+    {% if album.is_public and album.published_at %}
+    <div class="release-date">
+        Дата публикации · <time datetime="{{ album.published_at|date:'c' }}">{{ album.published_at|date:'d.m.Y' }}</time>
+    </div>
+    {% endif %}
     <div class="detail-art">
         {% with cover=album.cover|image_url %}
 
@@ -24,18 +31,16 @@
 
     </div>
     <div class="detail-info">
-        <p class="eyebrow">
+        <h1 id="album-title">{{ album.title }}</h1>
+        <p>
             {% if album.is_favorite_folder %}
-            Любимые
-            треки
+            Любимые треки
             {% elif album.is_public %}
             {{ album.get_release_type_display }}
             {% else %}
             Личный плейлист
             {% endif %}
-        </p>
-        <h1>{{ album.title }}</h1>
-        <p>{{ album.owner.username }} · {{ tracks.count }} треков
+            · {{ album.owner.username }} · {{ tracks.count }} треков
             {% if album.release_year %}
             ·
             {{ album.release_year }}
@@ -43,6 +48,9 @@
         </p>
         {% if album.description %}
         <p>{{ album.description }}</p>
+        {% endif %}
+        {% if album.owner == user and album.moderation_note %}
+        <div class="alert alert-info">{{ album.moderation_note }}</div>
         {% endif %}
 
         <div class="button-row">
@@ -89,29 +97,22 @@
     </div>
 </section>
 
-{% if album.owner == user and album.moderation_note %}
-<p class="alert alert-info">{{ album.moderation_note }}</p>
-
-{% endif %}
-
-<div class="section-head">
-    <h2>Треки</h2>
-</div>
-{% if tracks %}
-<div class="track-list">
-
-    {% for track in tracks %}
-
-    {% include 'includes/track_item.html' with current_album=album %}
-
-    {% endfor %}
-</div>
-
-{% else %}
-<div class="empty-state">
-    <h2>Здесь пока тихо</h2>
-    <p>Добавьте треки в редакторе плейлиста или релиза.</p>
-</div>
-{% endif %}
+<section class="surface-section surface-results" aria-labelledby="tracks-title">
+    <div class="section-head">
+        <h2 id="tracks-title">Треки</h2>
+    </div>
+    {% if tracks %}
+    <div class="track-list">
+        {% for track in tracks %}
+        {% include 'includes/track_item.html' with current_album=album %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h2>Здесь пока тихо</h2>
+        <p>Добавьте треки в редакторе плейлиста или релиза.</p>
+    </div>
+    {% endif %}
+</section>
 
 {% endblock %}

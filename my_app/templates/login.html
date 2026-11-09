@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Вход
 {% endblock %}
 
 {% block content %}
-<section class="auth-page">
+<section class="surface-section service-panel auth-page" aria-labelledby="login-title" data-page-dialog="{% url 'home' %}">
     <div class="page-head">
         <div>
-            <p class="eyebrow">Рады снова видеть</p>
-            <h1>Твоя музыка ждёт</h1>
+            <h1 id="login-title">Твоя музыка ждёт</h1>
             <p>Войди, чтобы вернуться к любимому.</p>
         </div>
     </div>

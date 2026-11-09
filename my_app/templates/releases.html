@@ -10,7 +10,6 @@
 <section class="surface-section catalog-intro" aria-labelledby="catalog-title">
 <div class="page-head">
     <div>
-        <p class="eyebrow">Слушай целиком</p>
         <h1 id="catalog-title">Истории в музыке</h1>
         <p>Альбомы, EP и микстейпы. У каждого релиза свой ритм.</p>
     </div>
@@ -25,14 +24,14 @@
 
 <section class="surface-section surface-results" aria-labelledby="releases-title">
 <div class="section-head">
-    <h2 id="releases-title">Все релизы</h2><small>{{ page_obj.paginator.count }} в каталоге</small>
+    <h2 id="releases-title">Все релизы</h2>
 </div>
 
 {% if albums %}
 <div class="card-grid">
     {% for album in albums %}
 
-    {% include 'includes/album_card.html' %}
+    {% include 'includes/album_card.html' with show_new=album.is_new %}
 
     {% endfor %}
 

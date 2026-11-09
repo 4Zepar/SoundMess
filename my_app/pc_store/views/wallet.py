@@ -6,6 +6,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 
+from pc_store.constants import HISTORY_LIMIT
 from pc_store.forms import PaymentForm
 from pc_store.models import Artist
 from pc_store.services.payments import adjust_balance, donate
@@ -77,7 +78,7 @@ def payment_page(request, artist=None):
     return render(request, 'support_artist.html' if artist else 'wallet_top_up.html', {
         'form': form, 'artist': artist, 'confirmation': confirmation,
         'confirmation_amount': form['amount'].value(), 'wallet': request.user.wallet,
-        'transactions': request.user.wallet.transactions.all()[:30],
+        'transactions': list(request.user.wallet.transactions.all()[:HISTORY_LIMIT]) if not artist else [],
         'donations': request.user.donations_sent.filter(artist=artist)[:10] if artist else [],
     })
 

@@ -2,6 +2,8 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 
 {% if public %}
@@ -14,16 +16,10 @@
 {% endblock %}
 
 {% block content %}
-<section class="form-page">
+<section class="surface-section service-panel form-page"
+    data-page-dialog="{% if public %}{% url 'artist_dashboard' %}{% else %}{% url 'profile' %}{% endif %}">
     <div class="page-head">
         <div>
-            <p class="eyebrow">
-                {% if public %}
-                Кабинет артиста
-                {% else %}
-                Твоя медиатека
-                {% endif %}
-            </p>
             <h1>
                 {% if album.pk %}
                 Изменить
@@ -107,7 +103,7 @@
                 {% else %}
                 <button class="btn" type="submit">Сохранить плейлист</button>
                 {% endif %}
-                <a class="btn btn-ghost"
+                <a class="btn btn-ghost" data-dismiss-page-dialog
                     href="{% if public %}{% url 'artist_dashboard' %}{% else %}{% url 'profile' %}{% endif %}">Отмена</a>
             </div>
         </form>

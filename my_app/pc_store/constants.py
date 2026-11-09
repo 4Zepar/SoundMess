@@ -1,5 +1,7 @@
 from django.db import models
 
+HISTORY_LIMIT = 20
+
 
 class PublicationStatus(models.TextChoices):
     DRAFT = 'draft', 'Черновик'

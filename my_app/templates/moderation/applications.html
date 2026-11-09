@@ -1,24 +1,28 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 
 {% block title %}
 Заявки артистов
 {% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Модерация</p>
         <h1>Заявки артистов</h1>
         <p>Познакомьтесь с артистом перед открытием публикаций.</p>
     </div>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
+{% block moderation_filters %}
 <nav class="tabs" aria-label="Статус заявок"><a class="tab {% if status == 'pending' %}is-active{% endif %}"
         href="?status=pending">На проверке</a><a class="tab {% if status == 'approved' %}is-active{% endif %}"
         href="?status=approved">Одобренные</a><a class="tab {% if status == 'rejected' %}is-active{% endif %}"
         href="?status=rejected">Отклонённые</a></nav>
 
+{% endblock %}
+
+{% block moderation_content %}
+<section class="surface-section service-panel surface-results" aria-label="Список заявок">
 {% for application in applications %}
 <article class="review-item">
     <div class="review-head">
@@ -57,5 +61,5 @@
 {% endfor %}
 
 {% include 'includes/pagination.html' %}
-
+</section>
 {% endblock %}

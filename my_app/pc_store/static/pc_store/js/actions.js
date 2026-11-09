@@ -58,7 +58,7 @@ export class Actions {
             const close = target.closest('[data-close-dialog]');
             if (close) { close.closest('dialog').close(); return; }
             const play = target.closest('[data-play-track]');
-            if (play) { this.player.playFromRow(play.closest('.track-row')); return; }
+            if (play) { this.player.playFromRow(play.closest('[data-track-source]')); return; }
             const like = target.closest('[data-like-id]');
             if (like && like.dataset.likeId) { await this.like(like); return; }
             const follow = target.closest('[data-follow-id]');
@@ -76,7 +76,7 @@ export class Actions {
             }
             const timestamp = target.closest('[data-seek-track]');
             if (timestamp) {
-                const row = document.querySelector('.track-row[data-track-id="' + timestamp.dataset.seekTrack + '"]');
+                const row = document.querySelector('[data-track-source][data-track-id="' + timestamp.dataset.seekTrack + '"]');
                 if (row) this.player.seekTo(row, Number(timestamp.dataset.seconds));
                 return;
             }
@@ -106,7 +106,7 @@ export class Actions {
                 control.setAttribute('aria-label', result.liked ? 'Убрать из любимого' : 'Добавить в любимое');
             }
             document.querySelectorAll('[data-like-count="' + id + '"]').forEach(count => { count.textContent = result.like_count; });
-            document.querySelectorAll('.track-row[data-track-id="' + id + '"]').forEach(row => { row.dataset.liked = String(result.liked); });
+            document.querySelectorAll('[data-track-source][data-track-id="' + id + '"]').forEach(row => { row.dataset.liked = String(result.liked); });
             this.player.setLiked(id, result.liked);
             if (document.getElementById('app-shell').dataset.page === 'profile') {
                 await this.navigation.navigate(location.href, { replace: true, preserveScroll: true });
@@ -316,12 +316,12 @@ export class Actions {
             preview.replaceChildren(image);
         }
         if (input.name === 'audio_file') {
-            const audio = document.querySelector('[data-audio-preview]');
+            const audio = input.form?.querySelector('[data-audio-preview]');
             if (!audio) return;
             audio.hidden = false;
             audio.src = url;
             audio.addEventListener('loadedmetadata', () => {
-                const label = document.querySelector('[data-audio-duration]');
+                const label = input.form?.querySelector('[data-audio-duration]');
                 if (label) label.textContent = 'Длительность: ' + formatTime(audio.duration);
             }, { once: true });
         }

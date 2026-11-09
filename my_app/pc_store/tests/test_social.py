@@ -141,7 +141,7 @@ class SocialTests(AppTestCase):
         pending = Artist.objects.create(user=User.objects.create_user(username='pending-artist'), moderation_status='pending')
         for artist in (self.artist, blocked, pending):
             Follow.objects.create(follower=self.listener, artist=artist)
-        Follow.objects.create(follower=self.moderator, artist=other)
+        Follow.objects.create(follower=self.administrator, artist=other)
         self.login()
         response = self.client.get(reverse('feed'))
         self.assertEqual(list(response.context['followed_artists']), [self.artist])

@@ -171,7 +171,8 @@ h3 {
 .app-layout {
     display: grid;
     grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-    min-height: 100dvh;
+    grid-template-rows: minmax(0, 1fr);
+    height: 100dvh;
 }
 
 .sidebar {
@@ -255,7 +256,6 @@ h3 {
 
 .workspace {
     min-width: 0;
-    padding-bottom: var(--player-height);
 }
 
 .avatar {
@@ -300,11 +300,7 @@ h3 {
     margin-bottom: 28px;
 }
 
-.page-head .eyebrow {
-    margin-bottom: 12px;
-}
-
-.page-head p:not(.eyebrow) {
+.page-head p {
     color: var(--muted);
     margin-top: 12px;
     max-width: 650px;
@@ -322,7 +318,8 @@ h3 {
     margin-top: 24px;
 }
 
-.btn {
+.btn,
+.release-hero .button-row > .badge {
     min-height: 42px;
     display: inline-flex;
     justify-content: center;
@@ -330,11 +327,14 @@ h3 {
     gap: 8px;
     border: 1px solid transparent;
     padding: 10px 18px;
-    background: var(--accent);
-    color: #17110c;
     font-size: 13px;
     font-weight: 700;
     border-radius: 8px;
+}
+
+.btn {
+    background: var(--accent);
+    color: #17110c;
 }
 
 .btn:hover {
@@ -621,7 +621,7 @@ input[type=file]::file-selector-button {
     justify-content: space-between;
     align-items: center;
     gap: 20px;
-    margin: 28px 0 16px;
+    margin: 20px 0 12px;
 }
 
 .section-head small {
@@ -630,51 +630,28 @@ input[type=file]::file-selector-button {
 
 .track-list {
     display: grid;
-    gap: 10px;
+    gap: 0;
 }
 
-.track-list-heading,
 .track-row {
     display: grid;
     grid-template-columns: 48px minmax(100px, 1fr) 100px 68px 48px 124px;
     gap: 16px;
     align-items: center;
-}
-
-.track-list-heading {
-    padding: 0 12px 10px;
-    color: #676b73;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .09em;
-}
-
-.track-row {
-    padding: 12px;
-    border-radius: 12px;
-    min-height: 74px;
-    background: rgb(255 255 255 / 3%);
-    border: 1px solid rgb(255 255 255 / 5%);
-    transition: background-color 160ms ease, border-color 160ms ease;
-}
-
-.track-row+.track-row {
-    margin-top: 10px;
-}
-
-.track-list>.track-row+.track-row {
-    margin-top: 0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    min-height: 64px;
+    background: transparent;
+    transition: background-color 160ms ease;
 }
 
 .track-row:hover,
 .track-row:focus-within {
     background: rgb(255 255 255 / 6%);
-    border-color: rgb(255 255 255 / 10%);
 }
 
 .track-row.is-playing {
     background: rgb(255 98 15 / 9%);
-    border-color: rgb(255 98 15 / 18%);
 }
 
 .track-row.is-playing .track-title {
@@ -1133,7 +1110,6 @@ input[type=file]::file-selector-button {
     display: flex;
     align-items: center;
     gap: 24px;
-    margin-bottom: 28px;
 }
 
 .profile-head h1 {
@@ -1194,8 +1170,8 @@ input[type=file]::file-selector-button {
     display: flex;
     gap: 16px;
     list-style: none;
-    margin: 0 0 32px;
-    padding: 4px 4px 12px;
+    margin: 0;
+    padding: 4px;
     overflow-x: auto;
 }
 
@@ -1239,47 +1215,19 @@ input[type=file]::file-selector-button {
     color: var(--accent);
 }
 
-.feed-entry {
-    margin-bottom: 32px;
-}
-
 .feed-label {
     font-size: 11px;
     color: #8c919a;
-    margin-bottom: 12px;
+    padding-inline: 12px;
+    margin-bottom: 2px;
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
-}
-
-.feed-album {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    padding: 18px;
-    background: #191919;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-}
-
-.feed-album>img,
-.feed-album>.art-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 8px;
-    flex-shrink: 0;
-}
-
-.feed-album h2 {
-    margin-bottom: 6px;
-    font-size: 20px;
 }
 
 .comments-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.3fr) minmax(220px, .7fr);
-    gap: 30px;
-    margin-top: 32px;
-    align-items: start;
 }
 
 .comment-form {
@@ -1371,11 +1319,6 @@ input[type=file]::file-selector-button {
     color: #a5a9b2;
     max-height: 650px;
     overflow-y: auto;
-}
-
-.lyrics-panel h2 {
-    margin-bottom: 18px;
-    font-size: 17px;
 }
 
 .stats-grid {
@@ -1795,11 +1738,6 @@ input[type=file]::file-selector-button {
     grid-template-columns: minmax(250px, .85fr) minmax(0, 1.15fr);
     gap: 24px;
     align-items: start;
-}
-
-.wallet-layout h2 {
-    font-size: 18px;
-    margin-bottom: 20px;
 }
 
 .transaction {
@@ -2270,7 +2208,6 @@ html.is-navigating::before {
         padding: 30px 24px 44px;
     }
 
-    .track-list-heading,
     .track-row {
         grid-template-columns: 44px minmax(100px, 1fr) 65px 40px 112px;
         gap: 12px;
@@ -2309,6 +2246,10 @@ html.is-navigating::before {
     .comments-layout,
     .wallet-layout {
         grid-template-columns: 1fr;
+    }
+
+    .comments-layout {
+        grid-template-rows: auto 1fr;
     }
 
     .comments-layout .lyrics-panel {
@@ -2356,7 +2297,7 @@ html.is-navigating::before {
         margin-top: 18px;
     }
 
-    .page-head p:not(.eyebrow) {
+    .page-head p {
         font-size: 12px;
     }
 
@@ -2379,14 +2320,14 @@ html.is-navigating::before {
         width: 100%;
     }
 
-    .track-list-heading {
-        display: none;
-    }
-
     .track-row {
         grid-template-columns: 42px minmax(70px, 1fr) 105px;
         gap: 10px;
         padding: 11px 10px;
+    }
+
+    .feed-label {
+        padding-inline: 10px;
     }
 
     .track-art {
@@ -2456,7 +2397,8 @@ html.is-navigating::before {
         gap: 8px;
     }
 
-    .detail-info .btn {
+    .detail-info .btn,
+    .release-hero .button-row > .badge {
         font-size: 11px;
         padding: 9px 12px;
     }
@@ -2606,21 +2548,6 @@ html.is-navigating::before {
 
     .wallet-summary strong {
         font-size: 30px;
-    }
-
-    .feed-album {
-        padding: 14px;
-        gap: 14px;
-    }
-
-    .feed-album>img,
-    .feed-album>.art-placeholder {
-        width: 72px;
-        height: 72px;
-    }
-
-    .feed-album h2 {
-        font-size: 17px;
     }
 
     .player {

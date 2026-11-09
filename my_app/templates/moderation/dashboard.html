@@ -1,51 +1,35 @@
-{% extends 'base.html' %}
-
-{% load music %}
+{% extends 'moderation/base.html' %}
 
 {% block title %}
 Модерация
 {% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Рабочее пространство</p>
         <h1>Модерация</h1>
         <p>Новые заявки, публикации и решения команды.</p>
     </div>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
-<div class="stats-grid">
-    <article class="stat-card">
+{% block moderation_content %}
+<div class="stats-grid service-grid">
+    <article class="stat-card service-panel">
         <p class="eyebrow">Заявки артистов</p><strong>{{ pending_artists_count }}</strong><a
             href="{% url 'moderation_applications' %}">Рассмотреть →</a>
     </article>
-    <article class="stat-card">
+    <article class="stat-card service-panel">
         <p class="eyebrow">Новые треки</p><strong>{{ pending_tracks_count }}</strong><a
             href="{% url 'moderation_tracks' %}">Проверить →</a>
     </article>
-    <article class="stat-card">
+    <article class="stat-card service-panel">
         <p class="eyebrow">Новые релизы</p><strong>{{ pending_albums_count }}</strong><a
             href="{% url 'moderation_albums' %}">Проверить →</a>
     </article>
 </div>
-<section class="panel">
-    <h2>Последние действия</h2>
-    {% for action in actions %}
-    <div class="audit-row">
-        <strong>{{ action.actor.username|default:'Удалённый аккаунт' }}</strong>
-        <div>{{ action.action|action_label }}<small>{{ action.target_type|target_label }}
-                #{{ action.target_id }}
-                {% if action.note %}
-                · {{ action.note }}
-                {% endif %}
-            </small></div>
-        <time>{{ action.created_at|date:'d.m H:i' }}</time>
-    </div>
-    {% empty %}
-    <p class="muted">Здесь появится история решений.</p>
-    {% endfor %}
-
+<section class="surface-section service-panel surface-results" aria-labelledby="audit-title">
+    <div class="section-head"><h2 id="audit-title">Последние действия</h2></div>
+    {% include 'includes/history.html' with entries=actions row_template='moderation/audit_row.html' empty_message='Здесь появится история решений.' only %}
 </section>
 {% endblock %}

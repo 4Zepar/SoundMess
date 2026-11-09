@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 
 {% load music %}
 
@@ -6,15 +6,15 @@
 Пользователи
 {% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Администрирование</p>
         <h1>Пользователи</h1>
         <p>Аккаунты, права доступа и балансы.</p>
     </div>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
+{% block moderation_filters %}
 <form method="get" class="search-row">
     <div class="search-box">
         {% include 'includes/icon.html' with name='search' %}
@@ -23,6 +23,10 @@
     </div><button class="btn btn-secondary">Найти</button>
 </form>
 
+{% endblock %}
+
+{% block moderation_content %}
+<section class="surface-section service-panel surface-results" aria-label="Список пользователей">
 {% for account in users %}
 <a class="user-row" href="{% url 'moderation_user_detail' account.id %}"><span class="avatar">
         {% with avatar=account.profile.avatar|image_url %}
@@ -48,5 +52,5 @@
 {% endfor %}
 
 {% include 'includes/pagination.html' %}
-
+</section>
 {% endblock %}

@@ -18,7 +18,7 @@ class CommentModerationTests(AppTestCase):
             author=self.listener, track=self.track, text='Hidden discussion', is_hidden=True,
         )
         Comment.objects.create(author=self.listener, track=self.other_track, text='Other discussion')
-        self.login(self.moderator)
+        self.login(self.administrator)
 
     def test_index_lists_songs_and_counts_instead_of_comment_text(self):
         self.make_track(title='No comments yet')
@@ -177,7 +177,7 @@ class CommentModerationTests(AppTestCase):
         self.assertEqual(urlsplit(response.url).path, reverse('moderation_track_comments', args=[self.track.pk]))
         self.assertEqual(parse_qs(urlsplit(response.url).query)['list_page'], ['2'])
         action = ModerationAction.objects.get(target_type='comment', target_id=target_id, action='deleted')
-        self.assertEqual(action.actor, self.moderator)
+        self.assertEqual(action.actor, self.administrator)
         self.assertIn('3', action.note)
         self.assertContains(self.client.get(reverse('moderation_dashboard')), 'Удалено')
 
@@ -194,7 +194,7 @@ class CommentModerationTests(AppTestCase):
         url = reverse('delete_moderated_comment', args=[self.comment.pk])
         self.assertEqual(self.client.get(url).status_code, 405)
         csrf_client = Client(enforce_csrf_checks=True)
-        csrf_client.force_login(self.moderator)
+        csrf_client.force_login(self.administrator)
         self.assertEqual(csrf_client.post(url).status_code, 403)
         self.login()
         self.assertEqual(self.client.post(url).status_code, 403)
@@ -235,9 +235,7 @@ class CommentModerationTests(AppTestCase):
 class AccountRoleTests(AppTestCase):
     def test_access_role_changes_persist_and_change_permissions(self):
         self.login(self.administrator)
-        for role, moderate, manage in [
-            ('moderator', True, False), ('administrator', True, True), ('member', False, False),
-        ]:
+        for role, is_admin in [('administrator', True), ('member', False)]:
             with self.subTest(role=role):
                 response = self.client.post(
                     reverse('moderation_update_user', args=[self.listener.pk]),
@@ -245,9 +243,8 @@ class AccountRoleTests(AppTestCase):
                 )
                 self.assertEqual(response.status_code, 302)
                 account = get_user_model().objects.get(pk=self.listener.pk)
-                self.assertEqual(account.has_perm('pc_store.moderate_content'), moderate)
-                self.assertEqual(account.has_perm('pc_store.manage_accounts'), manage)
-                self.assertEqual(account.is_staff, moderate)
+                self.assertEqual(account.has_perm('pc_store.manage_accounts'), is_admin)
+                self.assertEqual(account.is_staff, is_admin)
                 self.assertEqual(account.profile.role, 'listener')
                 detail = self.client.get(response.url)
                 self.assertEqual(detail.context['account_role'], role)
@@ -261,11 +258,25 @@ class AccountRoleTests(AppTestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_moderator_cannot_grant_admin_rights(self):
-        self.login(self.moderator)
+    def test_artist_cannot_grant_admin_rights(self):
+        self.login(self.artist_user)
         response = self.client.post(
             reverse('moderation_update_user', args=[self.listener.pk]),
             {'action': 'role', 'role': 'administrator'},
         )
         self.assertEqual(response.status_code, 403)
         self.assertFalse(self.listener.groups.filter(name='Администраторы').exists())
+
+    def test_removed_moderator_role_cannot_be_assigned(self):
+        self.login(self.administrator)
+        detail_url = reverse('moderation_user_detail', args=[self.listener.pk])
+        self.assertNotContains(self.client.get(detail_url), 'value="moderator"')
+        response = self.client.post(
+            reverse('moderation_update_user', args=[self.listener.pk]),
+            {'action': 'role', 'role': 'moderator'},
+            follow=True,
+        )
+        self.assertContains(response, 'Некорректное действие')
+        self.listener.refresh_from_db()
+        self.assertFalse(self.listener.is_staff)
+        self.assertFalse(self.listener.groups.exists())

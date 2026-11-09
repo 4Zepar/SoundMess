@@ -55,9 +55,6 @@ class AccessTests(AppTestCase):
         self.login()
         self.assertEqual(self.client.get(reverse('moderation_dashboard')).status_code, 403)
 
-    def test_moderator_cannot_manage_accounts_or_balances(self):
-        self.login(self.moderator)
-        self.assertEqual(self.client.get(reverse('moderation_dashboard')).status_code, 200)
         self.assertEqual(self.client.get(reverse('moderation_users')).status_code, 403)
         self.assertEqual(
             self.client.post(reverse('adjust_user_balance', args=[self.listener.pk]), {}).status_code,
@@ -66,6 +63,7 @@ class AccessTests(AppTestCase):
 
     def test_administrator_can_manage_accounts(self):
         self.login(self.administrator)
+        self.assertEqual(self.client.get(reverse('moderation_dashboard')).status_code, 200)
         self.assertEqual(self.client.get(reverse('moderation_users')).status_code, 200)
         self.assertEqual(
             self.client.get(reverse('moderation_user_detail', args=[self.listener.pk])).status_code,
@@ -84,12 +82,10 @@ class AccessTests(AppTestCase):
                 self.assertNotContains(response, 'Для артистов')
                 self.assertContains(response, f'href="{reverse("moderation_dashboard")}"')
 
-    def test_listeners_and_moderators_keep_artist_application_links(self):
-        for user in (self.listener, self.moderator):
-            with self.subTest(user=user.username):
-                self.login(user)
-                response = self.client.get(reverse('home'))
-                self.assertContains(response, f'href="{reverse("artist_application")}"', count=2)
+    def test_listeners_keep_artist_application_links(self):
+        self.login()
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, f'href="{reverse("artist_application")}"', count=2)
 
     def test_administrator_with_approved_artist_keeps_artist_tools(self):
         self.artist_user.groups.add(*self.administrator.groups.all())

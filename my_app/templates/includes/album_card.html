@@ -1,6 +1,7 @@
 {% load music %}
 <article class="music-card">
-    <a class="music-card-art" href="{{ album.get_absolute_url }}">
+    <a class="music-card-art" href="{{ album.get_absolute_url }}"
+        aria-label="{{ album.title }}{% if show_new %} — новый релиз{% endif %}">
         {% with cover=album.cover|image_url %}
 
         {% if cover %}
@@ -12,13 +13,18 @@
         {% endif %}
 
         {% endwith %}
+        {% if show_new %}
+        <span class="music-card-new" aria-hidden="true">NEW</span>
+        {% endif %}
     </a>
     <a class="music-card-title" href="{{ album.get_absolute_url }}">{{ album.title }}</a>
     <p class="music-card-caption">{{ album.owner.username }} · {{ album.track_count|default:0 }} треков</p>
-    {% if show_management %}
+    {% if show_status or show_management %}
     <div class="music-card-management">
         {% include 'includes/status.html' with item=album %}
+        {% if show_management %}
         <a class="btn btn-ghost" href="{% url 'edit_release' album.id %}">Изменить</a>
+        {% endif %}
     </div>
     {% endif %}
 </article>

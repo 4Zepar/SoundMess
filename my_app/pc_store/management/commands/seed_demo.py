@@ -55,7 +55,7 @@ class Command(BaseCommand):
         accounts = {}
         for name, group in (
             ('demo_listener', None), ('demo_pulse', None), ('demo_echo', None),
-            ('demo_moderator', 'Модераторы'), ('demo_admin', 'Администраторы'),
+            ('demo_admin', 'Администраторы'),
         ):
             user, created = get_user_model().objects.get_or_create(username=name)
             if created:

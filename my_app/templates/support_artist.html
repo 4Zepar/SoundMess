@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Поддержать {{ artist.user.username }}
 {% endblock %}
 
 {% block content %}
-<section class="form-page">
+<section class="surface-section service-panel wallet-overview" aria-labelledby="support-title">
     <div class="page-head">
         <div>
-            <p class="eyebrow">Спасибо за музыку</p>
-            <h1>Поддержать {{ artist.user.username }}</h1>
+            <h1 id="support-title">Поддержать {{ artist.user.username }}</h1>
             <p>Маленькое спасибо, которое помогает создавать новое.</p>
         </div>
     </div>
@@ -19,14 +20,15 @@
                     class="muted">USD</span></strong>
         </div><a class="btn btn-secondary" href="{% url 'wallet_top_up' %}">Пополнить</a>
     </div>
-    <div class="panel">
-        <h2>
+</section>
+<section class="surface-section service-panel" aria-labelledby="support-form-title">
+        <div class="section-head"><h2 id="support-form-title">
             {% if confirmation %}
             Подтверждение поддержки
             {% else %}
             Выбери сумму
             {% endif %}
-        </h2>
+        </h2></div>
         <form method="post">
             {% csrf_token %}
             {{ form.non_field_errors }}
@@ -54,19 +56,17 @@
                 </button><a class="btn btn-ghost" href="{{ artist.get_absolute_url }}">Отмена</a></div>
         </form>
         <p class="wallet-notice">Операция с виртуальными средствами. Реальная оплата не производится.</p>
-    </div>
+</section>
     {% if donations %}
+<section class="surface-section service-panel" aria-labelledby="support-history-title">
     <div class="section-head">
-        <h2>Твоя поддержка</h2>
+        <h2 id="support-history-title">Твоя поддержка</h2>
     </div>
-    <div class="panel">
         {% for donation in donations %}
         <div class="transaction"><span>Поддержка
                 {{ artist.user.username }}<small>{{ donation.created_at|date:'d.m.Y H:i' }}</small></span><strong>{{ donation.amount_usd|floatformat:2 }}
                 USD</strong></div>
         {% endfor %}
-    </div>
-    {% endif %}
-
 </section>
+    {% endif %}
 {% endblock %}

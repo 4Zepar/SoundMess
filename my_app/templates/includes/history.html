@@ -1,0 +1,19 @@
+{% for entry in entries|slice:":5" %}
+    {% include row_template %}
+{% empty %}
+    <p class="muted">{{ empty_message }}</p>
+{% endfor %}
+
+{% with remaining=entries|slice:"5:" %}
+{% if remaining %}
+<details class="history-more">
+    <summary class="btn btn-secondary">
+        <span class="history-expand">Посмотреть все</span>
+        <span class="history-collapse">Свернуть</span>
+    </summary>
+    {% for entry in remaining %}
+        {% include row_template %}
+    {% endfor %}
+</details>
+{% endif %}
+{% endwith %}

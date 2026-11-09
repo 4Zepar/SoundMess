@@ -2,15 +2,16 @@
 
 {% load music %}
 
+{% block surface_class %}{% endblock %}
+
 {% block title %}
 Настройки профиля
 {% endblock %}
 
 {% block content %}
-<section class="form-page">
+<section class="surface-section service-panel form-page" data-page-dialog="{% url 'profile' %}">
     <div class="page-head">
         <div>
-            <p class="eyebrow">Твой аккаунт</p>
             <h1>Настройки профиля</h1>
             <p>Расскажи о себе и добавь фотографию.</p>
         </div>
@@ -41,7 +42,7 @@
                 {% endwith %}
 
             </div>
-            <div class="button-row"><button class="btn">Сохранить</button><a class="btn btn-ghost"
+            <div class="button-row"><button class="btn">Сохранить</button><a class="btn btn-ghost" data-dismiss-page-dialog
                     href="{% url 'profile' %}">Отмена</a></div>
         </form>
     </div>

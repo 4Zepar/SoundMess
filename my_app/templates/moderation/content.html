@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 
 {% block title %}
 
@@ -11,10 +11,9 @@
 
 {% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Модерация</p>
         <h1>
             {% if kind == 'track' %}
             Треки
@@ -25,8 +24,9 @@
         <p>Прослушайте материал и проверьте описание перед публикацией.</p>
     </div>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
+{% block moderation_filters %}
 <form method="get" class="search-row">
     <div class="search-box">
         {% include 'includes/icon.html' with name='search' %}
@@ -41,6 +41,10 @@
     </select><button class="btn btn-secondary">Показать</button>
 </form>
 
+{% endblock %}
+
+{% block moderation_content %}
+<section class="surface-section service-panel surface-results" aria-label="Очередь публикаций">
 {% for item in items %}
 <article class="review-item">
     <div class="review-head">
@@ -105,5 +109,5 @@
 {% endfor %}
 
 {% include 'includes/pagination.html' %}
-
+</section>
 {% endblock %}

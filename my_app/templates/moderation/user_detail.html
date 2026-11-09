@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'moderation/base.html' %}
 
 {% load music %}
 
@@ -7,10 +7,9 @@
 аккаунт
 {% endblock %}
 
-{% block content %}
+{% block moderation_heading %}
 <div class="page-head">
     <div>
-        <p class="eyebrow">Администрирование / Пользователи</p>
         <h1>{{ account.username }}</h1>
         <p>{{ account.email|default:'Email не указан' }} · {{ account.profile.get_role_display }} ·
 
@@ -22,11 +21,12 @@
         </p>
     </div><a class="btn btn-ghost" href="{% url 'moderation_users' %}">Все пользователи</a>
 </div>
-{% include 'moderation/nav.html' %}
+{% endblock %}
 
-<div class="wallet-layout">
-    <section class="panel">
-        <h2>Права доступа</h2>
+{% block moderation_content %}
+<div class="wallet-layout service-grid">
+    <section class="surface-section service-panel" aria-labelledby="access-title">
+        <div class="section-head"><h2 id="access-title">Права доступа</h2></div>
         {% if account != user and not account.is_superuser %}
         <form method="post" action="{% url 'moderation_update_user' account.id %}">
             {% csrf_token %}
@@ -34,12 +34,11 @@
             <div class="form-field"><label for="account-role">Уровень доступа</label><select name="role"
                     id="account-role">
                     <option value="member" {% if account_role == 'member' %}selected{% endif %}>Пользователь</option>
-                    <option value="moderator" {% if account_role == 'moderator' %}selected{% endif %}>Модератор</option>
                     <option value="administrator" {% if account_role == 'administrator' %}selected{% endif %}>
                         Администратор</option>
                 </select></div>
-            <p class="helptext">Модератор проверяет заявки, публикации и комментарии. Администратор также управляет
-                пользователями и балансами. Статус артиста подтверждается отдельно через заявку.</p>
+            <p class="helptext">Администратор проверяет заявки, публикации и комментарии, управляет пользователями и балансами.
+                Статус артиста подтверждается отдельно через заявку.</p>
             <div class="button-row"><button class="btn btn-secondary" type="submit">Сохранить права</button></div>
         </form>
         <form method="post" action="{% url 'moderation_update_user' account.id %}"
@@ -62,8 +61,8 @@
         {% endif %}
 
     </section>
-    <section class="panel">
-        <h2>Баланс: {{ wallet.balance_usd|floatformat:2 }} USD</h2>
+    <section class="surface-section service-panel" aria-labelledby="balance-title">
+        <div class="section-head"><h2 id="balance-title">Баланс: {{ wallet.balance_usd|floatformat:2 }} USD</h2></div>
         <form method="post" action="{% url 'adjust_user_balance' account.id %}">
 
             {% csrf_token %}
@@ -77,15 +76,12 @@
         </form>
     </section>
 </div>
-<div class="section-head">
-    <h2>Операции кошелька</h2>
-</div>
-<section class="panel">
+<section class="surface-section service-panel" aria-labelledby="transactions-title">
+    <div class="section-head"><h2 id="transactions-title">Операции кошелька</h2></div>
     {% include 'includes/transactions.html' %}
 </section>
-<div class="section-head">
-    <h2>Треки пользователя</h2>
-</div>
+<section class="surface-section service-panel" aria-labelledby="user-tracks-title">
+    <div class="section-head"><h2 id="user-tracks-title">Треки пользователя</h2></div>
 {% if tracks %}
 <div class="track-list">
 
@@ -99,16 +95,19 @@
 <p class="muted">Треков
     пока нет.</p>
 {% endif %}
+</section>
 
-<div class="section-head">
-    <h2>Релизы</h2>
-</div>
-{% for album in albums %}
-<a class="management-row" href="{{ album.get_absolute_url }}"><strong>{{ album.title }}</strong>
-    {% include 'includes/status.html' with item=album %}
-    <span class="muted">Открыть →</span></a>
-{% empty %}
-<p class="muted">Релизов пока нет.</p>
-{% endfor %}
+<section class="surface-section service-panel" aria-labelledby="user-albums-title">
+    <div class="section-head"><h2 id="user-albums-title">Релизы</h2></div>
+    {% if albums %}
+    <div class="card-grid">
+        {% for album in albums %}
+        {% include 'includes/album_card.html' with show_status=True %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Релизов пока нет.</p>
+    {% endif %}
+</section>
 
 {% endblock %}
