@@ -35,6 +35,49 @@ h1,
     letter-spacing: -.015em;
 }
 
+.site-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 3% 82%, #1a1411 0, transparent 29%), #111;
+}
+
+.ambient-tree {
+    position: absolute;
+    inset: 0 0 0 var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    height: 100%;
+}
+
+.ambient-branch-sway {
+    transform-box: view-box;
+    animation: branch-sway var(--sway-time) ease-in-out var(--sway-delay) infinite alternate;
+}
+
+.ambient-petal {
+    opacity: 0;
+    animation: branch-fall var(--fall-time) linear var(--fall-delay) infinite;
+}
+
+@keyframes branch-sway {
+    from { transform: rotate(calc(-1 * var(--sway-angle))); }
+    to { transform: rotate(var(--sway-angle)); }
+}
+
+@keyframes branch-fall {
+    0% { opacity: 0; transform: translate(0, 0); }
+    12% { opacity: .88; }
+    42% { transform: translate(calc(var(--fall-drift) * -.35), calc(var(--fall-distance) * .32)); }
+    76% { opacity: .58; }
+    100% { opacity: 0; transform: translate(var(--fall-drift), var(--fall-distance)); }
+}
+
+.ambient-paused :is(.ambient-branch-sway, .ambient-petal) {
+    animation: none;
+}
+
 .app-layout {
     padding: var(--panel-gap);
     gap: var(--panel-gap);
@@ -101,6 +144,49 @@ h1,
 
 .workspace {
     padding-bottom: calc(var(--player-height) + var(--panel-gap));
+}
+
+.ambient-toggle {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    gap: 8px;
+}
+
+.sidebar-bottom .ambient-toggle {
+    margin-top: 10px;
+    padding-inline: 6px;
+    font-size: 12px;
+}
+
+.ambient-switch {
+    position: relative;
+    flex: 0 0 25px;
+    height: 14px;
+    margin-inline-start: auto;
+    border-radius: 8px;
+    background: #303030;
+}
+
+.ambient-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+.ambient-toggle[aria-pressed="true"] .ambient-switch {
+    background: rgb(255 98 15 / 18%);
+}
+
+.ambient-toggle[aria-pressed="true"] .ambient-switch::after {
+    transform: translateX(11px);
+    background: var(--accent);
 }
 
 .sidebar-auth {
@@ -333,6 +419,13 @@ h1,
         padding-bottom: calc(var(--player-height) + var(--mobile-tabs-height) + var(--panel-gap) * 2);
     }
 
+    .ambient-tree {
+        inset-inline-start: 0;
+        width: 100%;
+        height: 72%;
+        opacity: .68;
+    }
+
     .surface-section,
     .main-content.page-surface {
         padding: 12px;
@@ -434,5 +527,12 @@ h1,
 
     .mobile-more-menu > :is(a, button):hover {
         background: var(--surface-hover);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ambient-branch-sway,
+    .ambient-petal {
+        animation: none;
     }
 }

@@ -21,6 +21,7 @@
     <a class="skip-link" href="#main-content">К содержанию</a>
 
     {% include 'includes/sprite.html' %}
+    {% include 'includes/ambient_tree.html' %}
 
     <div class="app-layout" id="app-shell" data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
         data-page="{{ request.resolver_match.url_name }}">
@@ -100,6 +101,7 @@
                 </div>
                 {% endif %}
 
+                {% include 'includes/ambient_toggle.html' %}
             </div>
         </aside>
         <div class="workspace">
@@ -163,6 +165,7 @@
                     <a href="{% url 'login' %}">Войти</a>
                     <a href="{% url 'register' %}">Регистрация</a>
                     {% endif %}
+                    {% include 'includes/ambient_toggle.html' %}
                 </div>
             </details>
         </nav>
