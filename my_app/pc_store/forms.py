@@ -4,8 +4,9 @@ from pathlib import Path
 
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UsernameField
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from mutagen import File as AudioFile, MutagenError
 
@@ -45,6 +46,46 @@ class RegistrationForm(StyledFormMixin, UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = get_user_model()
         fields = ('username', 'email', 'role')
+
+
+class UsernameChangeForm(StyledFormMixin, forms.Form):
+    username_field = get_user_model()._meta.get_field('username')
+    username = UsernameField(
+        label='Имя пользователя', max_length=username_field.max_length,
+        validators=username_field.validators,
+        widget=forms.TextInput(attrs={'autocomplete': 'username'}),
+        help_text='Это имя используется для входа в аккаунт.'
+    )
+
+    def __init__(self, *args, account, **kwargs):
+        self.account = account
+        super().__init__(*args, initial={'username': account.username}, **kwargs)
+
+    def username_taken(self, username):
+        return get_user_model().objects.filter(username__iexact=username).exclude(pk=self.account.pk).exists()
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if username != self.account.username and self.username_taken(username):
+            raise ValidationError('Это имя уже занято.')
+        return username
+
+    def save(self):
+        username = self.cleaned_data['username']
+        previous = self.account.username
+        if username == previous:
+            return True
+        try:
+            with transaction.atomic():
+                self.account.username = username
+                self.account.save(update_fields=['username'])
+        except IntegrityError:
+            self.account.username = previous
+            if not self.username_taken(username):
+                raise
+            self.add_error('username', 'Это имя уже занято.')
+            return False
+        return True
 
 
 class ProfileForm(StyledFormMixin, forms.ModelForm):

@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
-from pc_store.models import Artist, Comment, ModerationAction
+from pc_store.models import Artist, Comment, ModerationAction, Track
+from pc_store.services.payments import adjust_balance, donate
 from .base import AppTestCase
 
 
@@ -280,3 +281,86 @@ class AccountRoleTests(AppTestCase):
         self.listener.refresh_from_db()
         self.assertFalse(self.listener.is_staff)
         self.assertFalse(self.listener.groups.exists())
+
+    def test_profile_rename_validates_name_before_saving_profile(self):
+        self.login()
+        url = reverse('profile_edit')
+        response = self.client.post(url, {'username': self.artist_user.username.upper(), 'bio': 'Unsaved bio'})
+        self.assertContains(response, 'Это имя уже занято.')
+        self.listener.refresh_from_db()
+        self.assertEqual(self.listener.username, 'listener')
+        self.assertEqual(self.listener.profile.bio, '')
+
+        response = self.client.post(url, {'username': 'new-listener', 'bio': 'Saved bio'})
+        self.assertRedirects(response, reverse('profile'))
+        self.listener.refresh_from_db()
+        self.assertEqual(self.listener.username, 'new-listener')
+        self.assertEqual(self.listener.profile.bio, 'Saved bio')
+
+    def test_administrator_renames_user_and_records_change(self):
+        self.login(self.administrator)
+        response = self.client.post(
+            reverse('moderation_update_user', args=[self.listener.pk]),
+            {'action': 'rename', 'username': 'renamed'},
+        )
+        self.assertRedirects(response, reverse('moderation_user_detail', args=[self.listener.pk]))
+        self.listener.refresh_from_db()
+        self.assertEqual(self.listener.username, 'renamed')
+        entry = ModerationAction.objects.get(target_type='user', target_id=self.listener.pk, action='rename')
+        self.assertIn('listener', entry.note)
+        self.assertIn('renamed', entry.note)
+
+    def test_deleting_donor_preserves_artist_credit(self):
+        adjust_balance(user=self.listener, amount_cents=100, operation_key='start', description='Topup')
+        donation = donate(donor=self.listener, artist=self.artist, amount_cents=30, operation_key='gift')
+        self.login(self.administrator)
+        response = self.client.post(reverse('moderation_update_user', args=[self.listener.pk]), {'action': 'delete'})
+        self.assertRedirects(response, reverse('moderation_users'))
+        self.assertFalse(get_user_model().objects.filter(pk=self.listener.pk).exists())
+        donation.refresh_from_db()
+        self.assertIsNone(donation.donor_id)
+        self.assertEqual(donation.transactions.get().amount_cents, 30)
+        self.artist_user.wallet.refresh_from_db()
+        self.assertEqual(self.artist_user.wallet.balance_cents, 30)
+
+    def test_deleting_artist_preserves_donor_debit_and_removes_catalog_entry(self):
+        adjust_balance(user=self.listener, amount_cents=100, operation_key='start', description='Topup')
+        donation = donate(donor=self.listener, artist=self.artist, amount_cents=30, operation_key='gift')
+        self.login(self.administrator)
+        response = self.client.post(reverse('moderation_update_user', args=[self.artist_user.pk]), {'action': 'delete'})
+        self.assertRedirects(response, reverse('moderation_users'))
+        self.assertFalse(Track.objects.filter(pk=self.track.pk).exists())
+        donation.refresh_from_db()
+        self.assertIsNone(donation.artist_id)
+        self.assertEqual(donation.transactions.get().amount_cents, -30)
+        self.listener.wallet.refresh_from_db()
+        self.assertEqual(self.listener.wallet.balance_cents, 70)
+
+    def test_account_deletion_respects_admin_access_and_protected_accounts(self):
+        user_model = get_user_model()
+        superuser = user_model.objects.create(username='root', is_superuser=True)
+        self.login()
+        url = reverse('moderation_update_user', args=[self.artist_user.pk])
+        self.assertEqual(self.client.post(url, {'action': 'delete'}).status_code, 403)
+
+        self.login(self.administrator)
+        for account in (self.administrator, superuser):
+            url = reverse('moderation_update_user', args=[account.pk])
+            self.assertEqual(self.client.post(url, {'action': 'delete'}).status_code, 403)
+            self.assertTrue(user_model.objects.filter(pk=account.pk).exists())
+
+    def test_administrator_can_remove_a_log_entry_without_reversing_the_action(self):
+        self.listener.is_active = False
+        self.listener.save(update_fields=['is_active'])
+        entry = ModerationAction.objects.create(
+            actor=self.administrator, target_type='user', target_id=self.listener.pk, action='active',
+        )
+        url = reverse('moderation_delete_action', args=[entry.pk])
+        self.login(self.artist_user)
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.login(self.administrator)
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.assertRedirects(self.client.post(url), reverse('moderation_dashboard'))
+        self.assertFalse(ModerationAction.objects.filter(pk=entry.pk).exists())
+        self.listener.refresh_from_db()
+        self.assertFalse(self.listener.is_active)

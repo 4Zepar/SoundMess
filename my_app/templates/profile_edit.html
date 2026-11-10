@@ -13,7 +13,7 @@
     <div class="page-head">
         <div>
             <h1>Настройки профиля</h1>
-            <p>Расскажи о себе и добавь фотографию.</p>
+            <p>Измени имя, описание или фотографию профиля.</p>
         </div>
     </div>
     <div class="panel">
@@ -21,6 +21,7 @@
 
             {% csrf_token %}
             {{ form.non_field_errors }}
+            {% include 'includes/field.html' with field=username_form.username %}
             {% for field in form %}
 
             {% include 'includes/field.html' %}

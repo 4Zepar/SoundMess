@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from pc_store.constants import HISTORY_LIMIT
-from pc_store.forms import BalanceAdjustmentForm, ModerationCommentFilterForm, ReviewForm
+from pc_store.forms import BalanceAdjustmentForm, ModerationCommentFilterForm, ReviewForm, UsernameChangeForm
 from pc_store.models import Album, Artist, Comment, ModerationAction, Track
 from pc_store.permissions import administrator_required
 from pc_store.selectors import album_cards, track_cards
@@ -28,6 +28,14 @@ def dashboard(request):
         'pending_albums_count': Album.objects.filter(is_public=True, moderation_status='pending').count(),
         'actions': list(ModerationAction.objects.select_related('actor')[:HISTORY_LIMIT]),
     })
+
+
+@administrator_required
+@require_POST
+def delete_action(request, action_id):
+    get_object_or_404(ModerationAction, pk=action_id).delete()
+    messages.success(request, 'Запись удалена из истории модерации.')
+    return redirect('moderation_dashboard')
 
 
 @administrator_required
@@ -269,6 +277,7 @@ def user_detail(request, user_id):
     ).exists() else 'member'
     return render(request, 'moderation/user_detail.html', {
         'account': account, 'account_role': role,
+        'username_form': UsernameChangeForm(account=account),
         'tracks': track_cards(request.user, Track.objects.filter(artist__user=account)),
         'albums': album_cards(account.albums.filter(is_public=True)),
         'comments': account.track_comments.select_related('track')[:20],
@@ -313,20 +322,17 @@ def adjust_user_balance(request, user_id):
 @administrator_required
 @require_POST
 def update_user(request, user_id):
-    account = get_object_or_404(get_user_model(), pk=user_id)
-    if account.pk == request.user.pk or (account.is_superuser and not request.user.is_superuser):
-        raise PermissionDenied
+    action = request.POST.get('action')
     with transaction.atomic():
-        action = request.POST.get('action')
+        account = get_object_or_404(get_user_model().objects.select_for_update(), pk=user_id)
+        if account.pk == request.user.pk or account.is_superuser:
+            raise PermissionDenied
+
         if action == 'active' and request.POST.get('active') in {'true', 'false'}:
-            if account.is_superuser:
-                raise PermissionDenied
             account.is_active = request.POST['active'] == 'true'
             account.save(update_fields=['is_active'])
             note = 'Аккаунт активирован' if account.is_active else 'Аккаунт заблокирован'
         elif action == 'role' and request.POST.get('role') in {'member', 'administrator'}:
-            if account.is_superuser:
-                raise PermissionDenied
             role = request.POST['role']
             administrators = Group.objects.get(name='Администраторы')
             if role == 'administrator':
@@ -337,15 +343,30 @@ def update_user(request, user_id):
             account.save(update_fields=['is_staff'])
             labels = {'member': 'Пользователь', 'administrator': 'Администратор'}
             note = f'Уровень доступа сохранён: {labels[role]}.'
+        elif action == 'rename':
+            previous = account.username
+            form = UsernameChangeForm(request.POST, account=account)
+            if not form.is_valid() or not form.save():
+                messages.error(request, ' '.join(form.errors['username']))
+                return redirect('moderation_user_detail', user_id=user_id)
+            if account.username == previous:
+                return redirect('moderation_user_detail', user_id=user_id)
+            note = f'Имя «{previous}» изменено на «{account.username}».'
+        elif action == 'delete':
+            note = f'Аккаунт «{account.username}» удалён.'
+            account.delete()
+            action = 'deleted'
         else:
             messages.error(request, 'Некорректное действие.')
-            return redirect('moderation_user_detail', user_id=account.pk)
+            return redirect('moderation_user_detail', user_id=user_id)
         ModerationAction.objects.create(
             actor=request.user,
             target_type='user',
-            target_id=account.pk,
+            target_id=user_id,
             action=action,
             note=note
         )
     messages.success(request, note)
-    return redirect('moderation_user_detail', user_id=account.pk)
+    if action == 'deleted':
+        return redirect('moderation_users')
+    return redirect('moderation_user_detail', user_id=user_id)

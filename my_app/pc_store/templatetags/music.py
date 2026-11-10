@@ -14,7 +14,8 @@ def action_label(value):
         'deleted': 'Удалено',
         'balance_adjustment': 'Корректировка баланса',
         'active': 'Доступ к аккаунту',
-        'role': 'Права доступа'
+        'role': 'Права доступа',
+        'rename': 'Смена имени'
     }.get(value, value)
 
 

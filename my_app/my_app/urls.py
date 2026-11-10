@@ -42,6 +42,7 @@ urlpatterns = [
     path('album/remove-track/', library.remove_track_from_album, name='remove_track_from_album'),
     path('history/add/<int:track_id>/', social.add_to_history, name='add_to_history'),
     path('moderation/', moderation.dashboard, name='moderation_dashboard'),
+    path('moderation/actions/<int:action_id>/delete/', moderation.delete_action, name='moderation_delete_action'),
     path('moderation/users/', moderation.users, name='moderation_users'),
     path('moderation/users/<int:user_id>/', moderation.user_detail, name='moderation_user_detail'),
     path(

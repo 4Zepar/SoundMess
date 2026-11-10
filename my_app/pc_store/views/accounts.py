@@ -5,7 +5,7 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from pc_store.forms import ProfileForm, RegistrationForm
+from pc_store.forms import ProfileForm, RegistrationForm, UsernameChangeForm
 from pc_store.models import Artist
 
 
@@ -32,11 +32,14 @@ def logout_view(request):
 
 @login_required
 def profile_edit(request):
-    form = ProfileForm(request.POST or None, request.FILES or None, instance=request.user.profile)
-    if request.method == 'POST' and form.is_valid():
+    data = request.POST if request.method == 'POST' else None
+    form = ProfileForm(data, request.FILES or None, instance=request.user.profile)
+    username_form = UsernameChangeForm(data, account=request.user)
+    if form.is_valid() and username_form.is_valid():
         with transaction.atomic():
-            profile = form.save()
-            Artist.objects.filter(user=request.user).update(bio=profile.bio)
-        messages.success(request, 'Профиль обновлён.')
-        return redirect('profile')
-    return render(request, 'profile_edit.html', {'form': form})
+            if username_form.save():
+                profile = form.save()
+                Artist.objects.filter(user=request.user).update(bio=profile.bio)
+                messages.success(request, 'Профиль обновлён.')
+                return redirect('profile')
+    return render(request, 'profile_edit.html', {'form': form, 'username_form': username_form})

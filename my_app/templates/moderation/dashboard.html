@@ -30,6 +30,6 @@
 </div>
 <section class="surface-section service-panel surface-results" aria-labelledby="audit-title">
     <div class="section-head"><h2 id="audit-title">Последние действия</h2></div>
-    {% include 'includes/history.html' with entries=actions row_template='moderation/audit_row.html' empty_message='Здесь появится история решений.' only %}
+    {% include 'includes/history.html' with entries=actions row_template='moderation/audit_row.html' empty_message='Здесь появится история решений.' csrf_token=csrf_token only %}
 </section>
 {% endblock %}

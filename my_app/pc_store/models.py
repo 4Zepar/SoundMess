@@ -288,10 +288,11 @@ class Donation(models.Model):
     STATUS_CHOICES = [('succeeded', 'Успешно'), ('failed', 'Отклонён'), ('refunded', 'Возвращён')]
     donor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        null=True,
+        on_delete=models.SET_NULL,
         related_name='donations_sent'
     )
-    artist = models.ForeignKey(Artist, on_delete=models.CASCADE, related_name='donations_received')
+    artist = models.ForeignKey(Artist, null=True, on_delete=models.SET_NULL, related_name='donations_received')
     amount_cents = models.PositiveIntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='succeeded')
     idempotency_key = models.CharField(max_length=64)

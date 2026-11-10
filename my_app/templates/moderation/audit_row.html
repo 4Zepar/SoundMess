@@ -5,5 +5,14 @@
             #{{ entry.target_id }}
             {% if entry.note %} · {{ entry.note }}{% endif %}
         </small></div>
-    <time>{{ entry.created_at|date:'d.m H:i' }}</time>
+    <div class="audit-actions">
+        <time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:'d.m H:i' }}</time>
+        <form method="post" action="{% url 'moderation_delete_action' entry.pk %}"
+            data-confirm="Удалить эту запись из истории модерации? Само действие останется в силе.">
+            {% csrf_token %}
+            <button class="icon-button" type="submit" aria-label="Удалить запись из истории" title="Удалить запись из истории">
+                {% include 'includes/icon.html' with name='trash' small=True %}
+            </button>
+        </form>
+    </div>
 </div>

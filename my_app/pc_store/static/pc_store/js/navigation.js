@@ -123,7 +123,11 @@ export class Navigation {
         if (!(form instanceof HTMLFormElement) || form.matches('[data-comment-form], [data-native]')) return;
         event.preventDefault();
         if (form.dataset.submitting === 'true') return;
-        if (form.dataset.confirm && !await confirmAction(form.dataset.confirm)) return;
+        form.dataset.submitting = 'true';
+        if (form.dataset.confirm && !await confirmAction(form.dataset.confirm)) {
+            delete form.dataset.submitting;
+            return;
+        }
         const data = new FormData(form, event.submitter);
         const method = (form.getAttribute('method') || 'GET').toUpperCase();
         const formUrl = this.pageDialog.content.contains(form) ? this.pageDialog.url : location.href;
@@ -132,7 +136,6 @@ export class Navigation {
             target.search = '';
             for (const [key, value] of data) if (typeof value === 'string' && value.trim()) target.searchParams.append(key, value);
         }
-        form.dataset.submitting = 'true';
         const buttons = [...form.querySelectorAll('button[type="submit"], button:not([type])')];
         buttons.forEach(button => { button.disabled = true; });
         await this.navigate(target.href, {

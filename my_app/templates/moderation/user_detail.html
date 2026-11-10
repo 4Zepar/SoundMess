@@ -25,9 +25,15 @@
 
 {% block moderation_content %}
 <div class="wallet-layout service-grid">
-    <section class="surface-section service-panel" aria-labelledby="access-title">
-        <div class="section-head"><h2 id="access-title">Права доступа</h2></div>
+    <section class="surface-section service-panel account-controls" aria-labelledby="access-title">
+        <div class="section-head"><h2 id="access-title">Управление аккаунтом</h2></div>
         {% if account != user and not account.is_superuser %}
+        <form method="post" action="{% url 'moderation_update_user' account.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="rename">
+            {% include 'includes/field.html' with field=username_form.username %}
+            <div class="button-row"><button class="btn btn-secondary" type="submit">Сохранить имя</button></div>
+        </form>
         <form method="post" action="{% url 'moderation_update_user' account.id %}">
             {% csrf_token %}
             <input type="hidden" name="action" value="role">
@@ -55,6 +61,12 @@
                     Разблокировать аккаунт
                     {% endif %}
                 </button></div>
+        </form>
+        <form method="post" action="{% url 'moderation_update_user' account.id %}"
+            data-confirm="Удалить аккаунт «{{ account.username }}» вместе с его публикациями и личной медиатекой? Это действие нельзя отменить.">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <div class="button-row"><button class="btn btn-danger" type="submit">Удалить аккаунт</button></div>
         </form>
         {% else %}
         <p class="muted">Собственные права и доступ суперпользователя здесь менять нельзя.</p>
