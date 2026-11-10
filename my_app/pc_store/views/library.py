@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from pc_store.constants import HISTORY_LIMIT
 from pc_store.forms import AlbumForm
 from pc_store.http import api_endpoint, integer, json_body
 from pc_store.models import Album, Track
@@ -25,9 +26,9 @@ def profile_view(request):
         ),
         'saved_albums': album_cards(request.user.saved_albums.published()),
         'my_tracks': track_cards(request.user, Track.objects.filter(artist__user=request.user)),
-        'history': request.user.history.filter(
+        'history': list(request.user.history.filter(
             track__in=visible_tracks
-        ).select_related('track__artist__user')[:20],
+        ).select_related('track__artist__user')[:HISTORY_LIMIT]),
         'wallet': request.user.wallet,
     })
 

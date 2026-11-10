@@ -126,12 +126,7 @@
 
     {% if history %}
     <div class="history-list">
-        {% for entry in history %}
-        <a class="history-row"
-            href="{{ entry.track.get_absolute_url }}"><span><strong>{{ entry.track.title }}</strong><small>{{ entry.track.artist.user.username }}</small></span><time
-                datetime="{{ entry.timestamp|date:'c' }}">{{ entry.timestamp|date:'d.m.Y H:i' }}</time></a>
-        {% endfor %}
-
+        {% include 'includes/history.html' with entries=history row_template='includes/listening_history_row.html' only %}
     </div>
     {% else %}
     <div class="empty-state">

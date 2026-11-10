@@ -1,0 +1,7 @@
+<a class="history-row" href="{{ entry.track.get_absolute_url }}">
+    <span>
+        <strong>{{ entry.track.title }}</strong>
+        <small>{{ entry.track.artist.user.username }}</small>
+    </span>
+    <time datetime="{{ entry.timestamp|date:'c' }}">{{ entry.timestamp|date:'d.m.Y H:i' }}</time>
+</a>
