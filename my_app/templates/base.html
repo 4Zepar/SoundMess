@@ -27,7 +27,9 @@
         data-page="{{ request.resolver_match.url_name }}">
         <aside class="sidebar" aria-label="Основная навигация">
             <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная">
-                <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}" alt="">SoundMess</a>
+                <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}" alt="">
+                <span>Sound<span class="brand-accent">Mess</span></span>
+            </a>
             <nav>
                 <div class="nav-section">
                     {% include 'includes/nav_link.html' with name='home' label='Треки' icon='music' %}
@@ -229,7 +231,7 @@
     </dialog>
     <dialog id="playlist-dialog" aria-labelledby="playlist-title"><button class="icon-button dialog-close"
             data-close-dialog aria-label="Закрыть">
-            {% include 'includes/icon.html' with name='close' %}
+            {% include 'includes/icon.html' with name='pixel-close' %}
         </button>
         <h2 id="playlist-title">Добавить в плейлист</h2>
         <div id="playlist-options-list" class="playlist-options"></div><a class="btn btn-secondary"
@@ -240,7 +242,7 @@
     <dialog id="page-dialog" class="page-dialog" aria-label="Форма">
         <div class="page-dialog-panel">
             <button class="icon-button dialog-close" type="button" data-dismiss-page-dialog aria-label="Закрыть">
-                {% include 'includes/icon.html' with name='close' %}
+                {% include 'includes/icon.html' with name='pixel-close' %}
             </button>
             <div class="page-dialog-scroll"></div>
         </div>

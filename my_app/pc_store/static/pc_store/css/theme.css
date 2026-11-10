@@ -106,12 +106,19 @@ h1,
     gap: 9px;
     padding-inline: 8px;
     margin-bottom: 28px;
+    font: 700 clamp(20px, 1.75vw, 24px)/1 "Pixelify Sans", "Golos Text", sans-serif;
+    letter-spacing: -.025em;
+    white-space: nowrap;
+}
+
+.brand-accent {
+    color: #ffad75;
 }
 
 .brand-mark {
     display: block;
-    width: 28px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
     flex: 0 0 auto;
 }
 
@@ -440,13 +447,33 @@ h1,
     scrollbar-width: thin;
 }
 
-.page-dialog .dialog-close {
+.icon-button.dialog-close {
     z-index: 1;
-    background: var(--surface);
+    isolation: isolate;
+    border-radius: 4px;
+    color: #18100a;
+    background: transparent;
 }
 
-.page-dialog .dialog-close:hover {
-    background: var(--surface-hover);
+.dialog-close::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--accent);
+    clip-path: polygon(
+        4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+        100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+        4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 4px 4px
+    );
+}
+
+.dialog-close:is(:hover, :focus-visible)::before {
+    background: var(--accent-hover);
+}
+
+#playlist-title {
+    padding-inline-end: 32px;
 }
 
 .page-dialog [data-page-dialog] {
@@ -722,9 +749,10 @@ h1,
 
 @media (max-width: 700px) {
     :root {
-        --panel-gap: 9px;
-        --mobile-tabs-height: calc(58px + env(safe-area-inset-bottom));
-        --player-bottom: calc(var(--mobile-tabs-height) + var(--panel-gap) * 2);
+        --panel-gap: 8px;
+        --mobile-tabs-height: 56px;
+        --mobile-tabs-bottom: max(var(--panel-gap), env(safe-area-inset-bottom, 0px));
+        --player-bottom: calc(var(--mobile-tabs-bottom) + var(--mobile-tabs-height) + var(--panel-gap));
         --workspace-start: var(--panel-gap);
     }
 
@@ -785,21 +813,27 @@ h1,
     }
 
     .player {
+        --player-button-size: clamp(40px, 11vw, 44px);
         grid-template-columns: minmax(0, 1fr) auto;
+        padding-block: 8px;
     }
 
-    .player-controls .icon-button,
-    .player-secondary-controls .icon-button {
-        width: 36px;
+    .player-center,
+    .player-controls {
+        gap: 4px;
     }
 
-    .player-secondary-controls {
-        position: static;
+    .player :is(.icon-button, .player-toggle) {
+        width: var(--player-button-size);
+        height: var(--player-button-size);
     }
 
     .mobile-tabs {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         inset-inline: var(--panel-gap);
-        bottom: var(--panel-gap);
+        bottom: var(--mobile-tabs-bottom);
+        padding-bottom: 0;
         backdrop-filter: blur(12px);
     }
 
@@ -813,10 +847,6 @@ h1,
         padding: 7px 3px;
         font-size: 10px;
         color: var(--muted);
-    }
-
-    .mobile-more {
-        flex: 0 0 16%;
     }
 
     .mobile-more summary {
@@ -859,5 +889,9 @@ h1,
 
     .mobile-more-menu > :is(a, button):hover {
         background: var(--surface-hover);
+    }
+
+    .toast-region {
+        bottom: var(--workspace-bottom);
     }
 }
