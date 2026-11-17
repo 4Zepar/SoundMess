@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" shape-rendering="crispEdges">
-  <path fill="#753719" d="M3 0h12v1h2v2h1v12h-1v2h-2v1H3v-1H1v-2H0V3h1V1h2z"/>
-  <path fill="#251711" d="M3 1h12v1h1v1h1v12h-1v1h-1v1H3v-1H2v-1H1V3h1V2h1z"/>
-  <path fill="#ff620f" d="M6 3h7v2H7v1H6v2h6v1h2v5h-2v1H5v-2h6v-1h1v-2H6V9H4V5h2z"/>
-  <path fill="#ffad75" d="M6 3h5v1H6zM15 6h1v2h-1zM2 10h1v2H2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" color="#ff620f">
+  <g id="soundmess-mark" shape-rendering="crispEdges">
+    <path d="M2 7h2v3H2z" fill="color-mix(in srgb, currentColor 42%, #161514)"/>
+    <path d="M4 5h2v7H4z" fill="color-mix(in srgb, currentColor 50%, #6e5563)"/>
+    <path d="M6 2h2v7H6z" fill="color-mix(in srgb, currentColor 35%, #1b1816)"/>
+    <path d="M6 9h2v5H6z" fill="color-mix(in srgb, currentColor 69%, #24201d)"/>
+    <path d="M8 7h2v3H8z" fill="color-mix(in srgb, currentColor 69%, #77726e)"/>
+    <path d="M10 4h2v8h-2z" fill="color-mix(in srgb, currentColor 80%, #ecc77d)"/>
+    <path d="M12 6h2v4h-2z" fill="color-mix(in srgb, currentColor 29%, #fff3d8)"/>
+  </g>
 </svg>

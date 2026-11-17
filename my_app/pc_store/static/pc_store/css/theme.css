@@ -106,19 +106,15 @@ h1,
     gap: 9px;
     padding-inline: 8px;
     margin-bottom: 28px;
-    font: 700 clamp(20px, 1.75vw, 24px)/1 "Pixelify Sans", "Golos Text", sans-serif;
-    letter-spacing: -.025em;
+    font: 650 clamp(21px, 1.65vw, 24px)/1 "Pixelify Sans", "Golos Text", sans-serif;
+    letter-spacing: -.02em;
     white-space: nowrap;
-}
-
-.brand-accent {
-    color: #ffad75;
 }
 
 .brand-mark {
     display: block;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     flex: 0 0 auto;
 }
 

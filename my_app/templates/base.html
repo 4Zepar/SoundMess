@@ -7,14 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#101010">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="icon" type="image/svg+xml" href="{% static 'pc_store/favicon.svg' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'pc_store/favicon.svg' %}?v=4">
     <title>
         {% block title %}
         Музыка
         {% endblock %}
         · SoundMess</title>
     <link rel="stylesheet" href="{% static 'pc_store/css/app.css' %}">
-    <link rel="stylesheet" href="{% static 'pc_store/css/theme.css' %}">
+    <link rel="stylesheet" href="{% static 'pc_store/css/theme.css' %}?v=brand-4">
     <script type="module" src="{% static 'pc_store/js/app.js' %}"></script>
 </head>
 <body data-login-url="{% url 'login' %}">
@@ -27,8 +27,8 @@
         data-page="{{ request.resolver_match.url_name }}">
         <aside class="sidebar" aria-label="Основная навигация">
             <a class="brand" href="{% url 'home' %}" aria-label="SoundMess — главная">
-                <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}" alt="">
-                <span>Sound<span class="brand-accent">Mess</span></span>
+                <img class="brand-mark" src="{% static 'pc_store/brand.svg' %}?v=4" width="36" height="36" alt="">
+                <span>SoundMess</span>
             </a>
             <nav>
                 <div class="nav-section">
